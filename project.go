@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -59,6 +60,26 @@ type ProjectRoot struct {
 	Project *Project `json:"data"`
 }
 
+func (r *ProjectRoot) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Error bool            `json:"error"`
+		Data  json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	r.Error = raw.Error
+	if len(raw.Data) == 0 || string(raw.Data) == "false" || string(raw.Data) == "null" {
+		return nil
+	}
+	var p Project
+	if err := json.Unmarshal(raw.Data, &p); err != nil {
+		return err
+	}
+	r.Project = &p
+	return nil
+}
+
 type ListUserLimitRoot struct {
 	Error bool      `json:"error"`
 	Data  UserLimit `json:"data"`
@@ -113,6 +134,10 @@ func (p *projectsServiceHandler) Get(ctx context.Context, identifer string) (*Pr
 	project := new(ProjectRoot)
 	if err := p.client.Do(ctx, req, project); err != nil {
 		return nil, err
+	}
+
+	if project.Project == nil {
+		return nil, fmt.Errorf("project not found")
 	}
 
 	return project.Project, nil

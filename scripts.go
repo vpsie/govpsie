@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -72,6 +73,21 @@ type ScriptRoot struct {
 	Data  ScriptDetail `json:"data"`
 }
 
+func (r *ScriptRoot) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Error bool            `json:"error"`
+		Data  json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	r.Error = raw.Error
+	if len(raw.Data) == 0 || string(raw.Data) == "false" || string(raw.Data) == "null" {
+		return nil
+	}
+	return json.Unmarshal(raw.Data, &r.Data)
+}
+
 func (s *scriptsServiceHandler) GetScripts(ctx context.Context) ([]Script, error) {
 	path := fmt.Sprintf("%s/scripts", scriptsBasePath)
 
@@ -97,6 +113,10 @@ func (s *scriptsServiceHandler) GetScript(ctx context.Context, scriptId string) 
 	script := new(ScriptRoot)
 	if err := s.client.Do(ctx, req, script); err != nil {
 		return ScriptDetail{}, err
+	}
+
+	if script.Data.Identifier == "" {
+		return ScriptDetail{}, fmt.Errorf("script not found")
 	}
 
 	return script.Data, nil

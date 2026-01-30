@@ -120,6 +120,9 @@ type ListReversePTRRoot struct {
 }
 
 func (d *domainsServiceHandler) ListDomainByProject(ctx context.Context, options *ListOptions, projectIdentifier string) ([]Domain, error) {
+	if options == nil {
+		options = &ListOptions{Page: 0, PerPage: 50}
+	}
 	path := fmt.Sprintf("%s/project/%s?offset=%d&limit%d", domainsPath, projectIdentifier, options.Page, options.PerPage)
 
 	req, err := d.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -196,6 +199,9 @@ func (d *domainsServiceHandler) DnsRecord(ctx context.Context, domainIdentifier 
 }
 
 func (d *domainsServiceHandler) ListDomains(ctx context.Context, options *ListOptions) ([]Domain, error) {
+	if options == nil {
+		options = &ListOptions{Page: 0, PerPage: 50}
+	}
 	path := fmt.Sprintf("%s?offset=%d&limit=%d", domainsPath, options.Page, options.PerPage)
 
 	req, err := d.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -224,6 +230,9 @@ func (d *domainsServiceHandler) ListAllDomains(ctx context.Context) ([]Domain, e
 }
 
 func (d *domainsServiceHandler) ListDomainVpsies(ctx context.Context, options *ListOptions) ([]DomainVpsie, error) {
+	if options == nil {
+		options = &ListOptions{Page: 0, PerPage: 50}
+	}
 	path := fmt.Sprintf("%s/vms?offset=%d&limit=%d", domainsPath, options.Page, options.PerPage)
 
 	req, err := d.client.NewRequest(ctx, http.MethodGet, path, nil)

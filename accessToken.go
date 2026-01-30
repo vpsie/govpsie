@@ -10,7 +10,7 @@ var accessTokenBasePath = "/apps/v2/profile/security"
 
 type AccessTokenService interface {
 	List(ctx context.Context, options *ListOptions) ([]AccessToken, error)
-	Create(ctx context.Context, name, accessToken, expirationDate string) error
+	Create(ctx context.Context, name, accessToken, expirationDate, status string) error
 	Delete(ctx context.Context, accessTokenIdentifier string) error
 	Update(ctx context.Context, accessTokenIdentifier, name, expirationDate string) error
 }
@@ -26,6 +26,7 @@ type AccessToken struct {
 	Name                  string `json:"name"`
 	CreatedOn             string `json:"created_on"`
 	ExpirationDate        string `json:"expiration_date"`
+	Status                string `json:"status"`
 }
 
 type ListAccessTokensRoot struct {
@@ -49,17 +50,19 @@ func (s *accessTokenServiceHandler) List(ctx context.Context, options *ListOptio
 	return accessTokens.Data, nil
 }
 
-func (s *accessTokenServiceHandler) Create(ctx context.Context, name, accessToken, expirationDate string) error {
+func (s *accessTokenServiceHandler) Create(ctx context.Context, name, accessToken, expirationDate, status string) error {
 	path := fmt.Sprintf("%s/access/token", accessTokenBasePath)
 
 	createAccessTokenReq := struct {
 		AccessTokenName string `json:"accessTokenName"`
 		AccessToken     string `json:"accessToken"`
 		ExpirationDate  string `json:"expirationDate"`
+		Status          string `json:"status"`
 	}{
 		AccessTokenName: name,
 		AccessToken:     accessToken,
 		ExpirationDate:  expirationDate,
+		Status:          status,
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, &createAccessTokenReq)

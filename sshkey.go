@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -23,6 +24,26 @@ type sshkeysServiceHandler struct {
 type SshKeysGetRoot struct {
 	Error bool    `json:"error"`
 	Data  *SShKey `json:"data"`
+}
+
+func (r *SshKeysGetRoot) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Error bool            `json:"error"`
+		Data  json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	r.Error = raw.Error
+	if len(raw.Data) == 0 || string(raw.Data) == "false" || string(raw.Data) == "null" {
+		return nil
+	}
+	var k SShKey
+	if err := json.Unmarshal(raw.Data, &k); err != nil {
+		return err
+	}
+	r.Data = &k
+	return nil
 }
 
 type SshKeysListRoot struct {
@@ -85,6 +106,10 @@ func (s *sshkeysServiceHandler) Get(ctx context.Context, sshKeyIdentifier string
 	sshKeys := new(SshKeysGetRoot)
 	if err = s.client.Do(ctx, req, sshKeys); err != nil {
 		return nil, err
+	}
+
+	if sshKeys.Data == nil {
+		return nil, fmt.Errorf("ssh key not found")
 	}
 
 	return sshKeys.Data, nil
