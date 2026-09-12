@@ -183,19 +183,21 @@ type ServerConsole struct {
 }
 
 type CreateServerRequest struct {
-	ResourceIdentifier string    `json:"resourceIdentifier"`
-	OsIdentifier       string    `json:"osIdentifier"`
-	DcIdentifier       string    `json:"dcIdentifier"`
-	Hostname           string    `json:"hostname"`
-	Notes              *string   `json:"notes,omitempty"`
-	BackupEnabled      *int64    `json:"backupEnabled,omitempty"`
-	AddPublicIpV4      *int64    `json:"addPublicIpV4,omitempty"`
-	AddPublicIpV6      *int64    `json:"addPublicIpV6,omitempty"`
-	AddPrivateIp       *int64    `json:"addPrivateIp,omitempty"`
-	SshKeyIdentifier   *string   `json:"sshKeyIdentifier,omitempty"`
-	ProjectID          int64     `json:"projectId"`
-	Tags               []*string `json:"tags,omitempty"`
-	ScriptIdentifier   *string   `json:"scriptIdentifier,omitempty"`
+	ResourceIdentifier  string    `json:"resourceIdentifier"`
+	OsIdentifier        string    `json:"osIdentifier"`
+	DcIdentifier        string    `json:"dcIdentifier"`
+	Hostname            string    `json:"hostname"`
+	Notes               *string   `json:"notes,omitempty"`
+	BackupEnabled       *int64    `json:"backupEnabled,omitempty"`
+	AddPublicIpV4       *int64    `json:"addPublicIpV4,omitempty"`
+	AddPublicIpV6       *int64    `json:"addPublicIpV6,omitempty"`
+	AddPrivateIp        *int64    `json:"addPrivateIp,omitempty"`
+	SshKeyIdentifier    *string   `json:"sshKeyIdentifier,omitempty"`
+	ProjectIdentifier   string    `json:"projectId"`
+	VmPassword          string    `json:"vmPassword,omitempty"`
+	IsGeneratedPassword bool      `json:"isGeneratedPassword"`
+	Tags                []*string `json:"tags,omitempty"`
+	ScriptIdentifier    *string   `json:"scriptIdentifier,omitempty"`
 }
 
 type ActionRequest struct {
