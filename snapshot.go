@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -277,8 +278,8 @@ type ListSnapShotPoliciesRoot struct {
 }
 
 type GetSnapShotPolicyRoot struct {
-	Error bool           `json:"error"`
-	Data  SnapShotPolicy `json:"data"`
+	Error bool            `json:"error"`
+	Data  json.RawMessage `json:"data"`
 }
 
 type CreateSnapShotPolicyReq struct {
@@ -306,6 +307,9 @@ func (s *snapshotServiceHandler) ListSnapShotPolicies(ctx context.Context, optio
 	return policies.Data.Rows, nil
 }
 
+// GetSnapShotPolicy fetches a single snapshot policy by its UUID identifier.
+// When the policy does not exist the API returns HTTP 200 with a literal
+// `"data": false`, so (nil, nil) is returned to signal not-found.
 func (s *snapshotServiceHandler) GetSnapShotPolicy(ctx context.Context, identifier string) (*SnapShotPolicy, error) {
 	path := fmt.Sprintf("%s/policy/%s", snapshotBasePath, identifier)
 
@@ -314,12 +318,21 @@ func (s *snapshotServiceHandler) GetSnapShotPolicy(ctx context.Context, identifi
 		return nil, err
 	}
 
-	policy := new(GetSnapShotPolicyRoot)
-	if err = s.client.Do(ctx, req, policy); err != nil {
+	root := new(GetSnapShotPolicyRoot)
+	if err = s.client.Do(ctx, req, root); err != nil {
 		return nil, err
 	}
 
-	return &policy.Data, nil
+	if isNullData(root.Data) {
+		return nil, nil
+	}
+
+	policy := new(SnapShotPolicy)
+	if err = json.Unmarshal(root.Data, policy); err != nil {
+		return nil, err
+	}
+
+	return policy, nil
 }
 
 func (s *snapshotServiceHandler) CreateSnapShotPolicy(ctx context.Context, createReq *CreateSnapShotPolicyReq) error {

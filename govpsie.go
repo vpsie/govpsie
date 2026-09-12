@@ -205,7 +205,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) error
 		return err
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -241,4 +241,15 @@ func StreamToString(stream io.Reader) string {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(stream)
 	return buf.String()
+}
+
+// isNullData reports whether a JSON `data` payload is absent. Several VPSie
+// endpoints return HTTP 200 with a literal `"data": false` (or `null`) to mean
+// "not found" rather than a 404, so callers use this to distinguish a missing
+// resource from a real one.
+func isNullData(raw json.RawMessage) bool {
+	trimmed := bytes.TrimSpace(raw)
+	return len(trimmed) == 0 ||
+		bytes.Equal(trimmed, []byte("null")) ||
+		bytes.Equal(trimmed, []byte("false"))
 }

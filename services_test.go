@@ -181,6 +181,100 @@ func TestManagedDB_DeleteSendsProcessID(t *testing.T) {
 	}
 }
 
+func TestDomain_DeleteDnsRecordPath(t *testing.T) {
+	// Regression: the delete must hit DELETE /domain/dnsRecord, not the
+	// non-existent /domain/dnsRecord/delete (which returned "Not found").
+	var got map[string]interface{}
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete || r.URL.Path != "/apps/v2/domain/dnsRecord" {
+			t.Errorf("got %s %s, want DELETE /apps/v2/domain/dnsRecord", r.Method, r.URL.Path)
+		}
+		got = decodeBody(t, r)
+		_, _ = w.Write([]byte(`{"error":false,"data":true}`))
+	})
+
+	rec := &Record{Name: "www", Content: "1.2.3.4", Type: "A", TTL: 3600}
+	if err := c.Domain.DeleteDnsRecord(context.Background(), "dom-1", rec); err != nil {
+		t.Fatalf("DeleteDnsRecord: %v", err)
+	}
+	if got["domainIdentifier"] != "dom-1" {
+		t.Errorf("missing domainIdentifier: %+v", got)
+	}
+	record, ok := got["record"].(map[string]interface{})
+	if !ok || record["name"] != "www" || record["content"] != "1.2.3.4" {
+		t.Errorf("unexpected record body: %+v", got["record"])
+	}
+}
+
+func TestDomain_GetByIdentifierGroupsRecords(t *testing.T) {
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/apps/v2/domain/dom-1" {
+			t.Errorf("got %s %s", r.Method, r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"error":false,"data":{"domainIdentifier":"dom-1","domain":"ex.com","records":{"A":[{"name":"www.ex.com","content":"1.2.3.4","type":"A","ttl":3600}],"AAAA":[],"CNAME":[],"MX":[],"TXT":[],"CAA":[],"SRV":[],"NS":[]}}}`))
+	})
+
+	dom, err := c.Domain.GetDomainByIdentifier(context.Background(), "dom-1")
+	if err != nil {
+		t.Fatalf("GetDomainByIdentifier: %v", err)
+	}
+	if dom.Domain != "ex.com" {
+		t.Errorf("unexpected domain: %q", dom.Domain)
+	}
+	aRecords := dom.RecordsByType("A")
+	if len(aRecords) != 1 || aRecords[0].Name != "www.ex.com" || aRecords[0].TTL != 3600 {
+		t.Errorf("unexpected A records: %+v", aRecords)
+	}
+	if len(dom.RecordsByType("MX")) != 0 {
+		t.Errorf("expected no MX records")
+	}
+}
+
+func TestBackupPolicy_GetSingularPathAndVms(t *testing.T) {
+	// Regression: GET must use the singular /backup/policy/:id route (the plural
+	// /backups/policy/:id returned "Not found"), and vms are objects.
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/apps/v2/backup/policy/bp-1" {
+			t.Errorf("got %s, want /apps/v2/backup/policy/bp-1", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"error":false,"data":{"name":"nightly","identifier":"bp-1","backupPlan":"day","planEvery":1,"keep":3,"vms":[{"name":"web","identifier":"vm-1","type":"vm"}]}}`))
+	})
+
+	policy, err := c.Backup.GetBackupPolicy(context.Background(), "bp-1")
+	if err != nil {
+		t.Fatalf("GetBackupPolicy: %v", err)
+	}
+	if policy == nil || policy.Name != "nightly" || len(policy.Vms) != 1 || policy.Vms[0].Identifier != "vm-1" {
+		t.Fatalf("unexpected policy: %+v", policy)
+	}
+}
+
+func TestBackupPolicy_GetNotFound(t *testing.T) {
+	c := setup(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"error":false,"data":false}`))
+	})
+	policy, err := c.Backup.GetBackupPolicy(context.Background(), "gone")
+	if err != nil {
+		t.Fatalf("GetBackupPolicy: %v", err)
+	}
+	if policy != nil {
+		t.Fatalf("expected nil policy for data:false, got %+v", policy)
+	}
+}
+
+func TestSnapshotPolicy_GetNotFound(t *testing.T) {
+	c := setup(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"error":false,"data":false}`))
+	})
+	policy, err := c.Snapshot.GetSnapShotPolicy(context.Background(), "gone")
+	if err != nil {
+		t.Fatalf("GetSnapShotPolicy: %v", err)
+	}
+	if policy != nil {
+		t.Fatalf("expected nil policy for data:false, got %+v", policy)
+	}
+}
+
 func TestManagedDB_AddNodeSendsRequiredFields(t *testing.T) {
 	var got map[string]interface{}
 	c := setup(t, func(w http.ResponseWriter, r *http.Request) {

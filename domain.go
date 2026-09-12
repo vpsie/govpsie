@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -25,6 +26,7 @@ type DomainService interface {
 	UpdateDnsRecord(ctx context.Context, updateReq *UpdateDnsRecordReq) error
 	DeleteDomain(ctx context.Context, domainIdentifier, reason, note string) error
 	DeleteDnsRecord(ctx context.Context, domainIdentifier string, record *Record) error
+	GetDomainByIdentifier(ctx context.Context, domainIdentifier string) (*DomainWithRecords, error)
 	ListReversePTRRecords(ctx context.Context) ([]ReversePTR, error)
 }
 
@@ -108,6 +110,63 @@ type UpdateDnsRecordReq struct {
 	New              Record `json:"new"`
 }
 
+// DomainRecord is a single DNS record as returned by GET /domain/:identifier.
+// The name is fully-qualified (e.g. "www.example.com") regardless of the short
+// name used at create time.
+type DomainRecord struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
+	Type    string `json:"type"`
+	TTL     int    `json:"ttl"`
+}
+
+// DomainWithRecords is the payload of GET /domain/:identifier. The records are
+// grouped into an object keyed by record type.
+type DomainWithRecords struct {
+	DomainIdentifier string `json:"domainIdentifier"`
+	Domain           string `json:"domain"`
+	Records          struct {
+		A     []DomainRecord `json:"A"`
+		AAAA  []DomainRecord `json:"AAAA"`
+		CNAME []DomainRecord `json:"CNAME"`
+		MX    []DomainRecord `json:"MX"`
+		TXT   []DomainRecord `json:"TXT"`
+		CAA   []DomainRecord `json:"CAA"`
+		SRV   []DomainRecord `json:"SRV"`
+		NS    []DomainRecord `json:"NS"`
+	} `json:"records"`
+	Nameservers []string `json:"nameservers"`
+}
+
+// RecordsByType returns the record slice for a given DNS record type.
+func (d *DomainWithRecords) RecordsByType(recordType string) []DomainRecord {
+	switch recordType {
+	case "A":
+		return d.Records.A
+	case "AAAA":
+		return d.Records.AAAA
+	case "CNAME":
+		return d.Records.CNAME
+	case "MX":
+		return d.Records.MX
+	case "TXT":
+		return d.Records.TXT
+	case "CAA":
+		return d.Records.CAA
+	case "SRV":
+		return d.Records.SRV
+	case "NS":
+		return d.Records.NS
+	default:
+		return nil
+	}
+}
+
+type getDomainWithRecordsRoot struct {
+	Error bool            `json:"error"`
+	Data  json.RawMessage `json:"data"`
+}
+
 type ReversePTR struct {
 	Ip           string `json:"ip"`
 	HostName     string `json:"host_name"`
@@ -161,7 +220,7 @@ func (d *domainsServiceHandler) UpdateDnsRecord(ctx context.Context, updateReq *
 }
 
 func (d *domainsServiceHandler) DeleteDnsRecord(ctx context.Context, domainIdentifier string, record *Record) error {
-	path := fmt.Sprintf("%s/dnsRecord/delete", domainPath)
+	path := fmt.Sprintf("%s/dnsRecord", domainPath)
 
 	updateReq := struct {
 		DomainIdentifier string `json:"domainIdentifier"`
@@ -173,10 +232,39 @@ func (d *domainsServiceHandler) DeleteDnsRecord(ctx context.Context, domainIdent
 
 	req, err := d.client.NewRequest(ctx, http.MethodDelete, path, updateReq)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return d.client.Do(ctx, req, nil)
+}
+
+// GetDomainByIdentifier fetches a domain and its DNS records by the domain's
+// UUID identifier. Records come back grouped by type. When the domain does not
+// exist the API returns HTTP 200 with a literal `"data": false`, so (nil, nil)
+// is returned to signal not-found.
+func (d *domainsServiceHandler) GetDomainByIdentifier(ctx context.Context, domainIdentifier string) (*DomainWithRecords, error) {
+	path := fmt.Sprintf("%s/%s", domainPath, domainIdentifier)
+
+	req, err := d.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	root := new(getDomainWithRecordsRoot)
+	if err = d.client.Do(ctx, req, root); err != nil {
+		return nil, err
+	}
+
+	if isNullData(root.Data) {
+		return nil, nil
+	}
+
+	domain := new(DomainWithRecords)
+	if err = json.Unmarshal(root.Data, domain); err != nil {
+		return nil, err
+	}
+
+	return domain, nil
 }
 
 func (d *domainsServiceHandler) DnsRecord(ctx context.Context, domainIdentifier string, dnsRecord *DnsRecord) error {

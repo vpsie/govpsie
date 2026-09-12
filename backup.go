@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -219,17 +220,26 @@ func (b *backupsServiceHandler) Rename(ctx context.Context, backupIdentifier str
 
 // backup policies apis
 
+type BackupPolicyVm struct {
+	Name          string `json:"name"`
+	Identifier    string `json:"identifier"`
+	Category      string `json:"category"`
+	Fullname      string `json:"fullname"`
+	ImgIdentifier string `json:"imgIdentifier"`
+	Type          string `json:"type"`
+}
+
 type BackupPolicy struct {
-	Name       string   `json:"name"`
-	Identifier string   `json:"identifier"`
-	CreatedOn  string   `json:"created_on"`
-	CreatedBy  string   `json:"created_by"`
-	BackupPlan string   `json:"backupPlan"`
-	PlanEvery  int      `json:"planEvery"`
-	Keep       int      `json:"keep"`
-	Disabled   int      `json:"disabled"`
-	UserId     int      `json:"userId"`
-	Vms        []string `json:"vms"`
+	Name       string           `json:"name"`
+	Identifier string           `json:"identifier"`
+	CreatedOn  string           `json:"created_on"`
+	CreatedBy  string           `json:"created_by"`
+	BackupPlan string           `json:"backupPlan"`
+	PlanEvery  int              `json:"planEvery"`
+	Keep       int              `json:"keep"`
+	Disabled   int              `json:"disabled"`
+	UserId     int              `json:"userId"`
+	Vms        []BackupPolicyVm `json:"vms"`
 }
 
 type BackupPolicyListDetail struct {
@@ -252,8 +262,8 @@ type ListBackupPoliciesRoot struct {
 }
 
 type GetBackupPolicyRoot struct {
-	Error bool         `json:"error"`
-	Data  BackupPolicy `json:"data"`
+	Error bool            `json:"error"`
+	Data  json.RawMessage `json:"data"`
 }
 
 type CreateBackupPolicyReq struct {
@@ -281,20 +291,33 @@ func (b *backupsServiceHandler) ListBackupPolicies(ctx context.Context, options 
 	return policies.Data.Rows, nil
 }
 
+// GetBackupPolicy fetches a single backup policy by its UUID identifier. The
+// route is singular (/backup/policy/:id) even though the create and list routes
+// are plural. When the policy does not exist the API returns HTTP 200 with a
+// literal `"data": false`, so (nil, nil) is returned to signal not-found.
 func (b *backupsServiceHandler) GetBackupPolicy(ctx context.Context, identifier string) (*BackupPolicy, error) {
-	path := fmt.Sprintf("%s/backups/policy/%s", backupsPath, identifier)
+	path := fmt.Sprintf("%s/backup/policy/%s", backupsPath, identifier)
 
 	req, err := b.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	policy := new(GetBackupPolicyRoot)
-	if err = b.client.Do(ctx, req, policy); err != nil {
+	root := new(GetBackupPolicyRoot)
+	if err = b.client.Do(ctx, req, root); err != nil {
 		return nil, err
 	}
 
-	return &policy.Data, nil
+	if isNullData(root.Data) {
+		return nil, nil
+	}
+
+	policy := new(BackupPolicy)
+	if err = json.Unmarshal(root.Data, policy); err != nil {
+		return nil, err
+	}
+
+	return policy, nil
 }
 
 func (b *backupsServiceHandler) CreateBackupPolicy(ctx context.Context, createReq *CreateBackupPolicyReq) error {
