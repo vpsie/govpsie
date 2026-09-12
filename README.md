@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/vpsie/govpsie.svg)](https://pkg.go.dev/github.com/vpsie/govpsie)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/vpsie/govpsie)](go.mod)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](LICENSE)
 
 `govpsie` is the official Go client library for the [VPSie](https://vpsie.com)
 cloud API. It provides typed access to servers, storage, networking, DNS, load
@@ -233,4 +233,4 @@ VPSIE_ACCESS_TOKEN="your-token" go test ./... -v
 
 ## License
 
-Distributed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
+Distributed under the Mozilla Public License 2.0. See [LICENSE](LICENSE).
