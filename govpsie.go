@@ -30,6 +30,12 @@ type Client struct {
 	UserAgent string
 	headers   map[string]string
 
+	// AccountPassword is the password of the account the access token belongs
+	// to. A few destructive endpoints -- deleting a server, notably -- confirm
+	// the operation against the account password rather than the resource's own
+	// credentials, and reject the call without it.
+	AccountPassword string
+
 	// services
 	Account       AccountService
 	Project       ProjectsService
@@ -132,6 +138,12 @@ func NewClient(httpClient *http.Client) *Client {
 
 	c.headers = make(map[string]string)
 	return c
+}
+
+// SetAccountPassword records the account password used to confirm destructive
+// operations. See Client.AccountPassword.
+func (c *Client) SetAccountPassword(password string) {
+	c.AccountPassword = password
 }
 
 func (c *Client) SetRequestHeaders(headers map[string]string) {
