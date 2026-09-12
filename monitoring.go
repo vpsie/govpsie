@@ -43,7 +43,11 @@ type MonitoringRule struct {
 type ListMonitoringRuleRoot struct {
 	Error bool             `json:"error"`
 	Data  []MonitoringRule `json:"data"`
-	Total int              `json:"total"`
+	// The monitoring endpoint returns total as an array (e.g. [{"count":0}]),
+	// unlike other list endpoints that use a plain integer.
+	Total []struct {
+		Count int `json:"count"`
+	} `json:"total"`
 }
 
 type CreateMonitoringRuleReq struct {
