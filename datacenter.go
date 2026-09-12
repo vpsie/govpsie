@@ -39,6 +39,9 @@ type DataCenterListRoot struct {
 }
 
 func (d *dataCenterServiceHandler) List(ctx context.Context, options *ListOptions) ([]DataCenter, error) {
+	if options == nil {
+		options = &ListOptions{}
+	}
 	path := fmt.Sprintf("%s?offset=%d&limit=%d", dataCenterBasePath, options.Page, options.PerPage)
 
 	req, err := d.client.NewRequest(ctx, http.MethodGet, path, nil)

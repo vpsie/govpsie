@@ -189,7 +189,7 @@ storages, err := client.Storage.List(ctx, opts)
 `message` field. A `204 No Content` is treated as success with no body.
 
 ```go
-if _, err := client.Server.Get(ctx, "does-not-exist"); err != nil {
+if _, err := client.Server.GetServerByIdentifier(ctx, "does-not-exist"); err != nil {
 	// err.Error() contains the API-provided message.
 }
 ```

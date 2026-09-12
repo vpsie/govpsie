@@ -178,6 +178,9 @@ type ListStorageDataCenterRoot struct {
 }
 
 func (s *storageServiceHandler) List(ctx context.Context, options *ListOptions) ([]Storage, error) {
+	if options == nil {
+		options = &ListOptions{}
+	}
 	path := fmt.Sprintf("%s/storages?offset=%d&limit=%d", storageBasePath, options.Page, options.PerPage)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -458,6 +461,9 @@ func (s *storageServiceHandler) CreateSnapshot(ctx context.Context, storageIdent
 }
 
 func (s *storageServiceHandler) ListSnapshots(ctx context.Context, options *ListOptions) ([]StorageSnapShot, error) {
+	if options == nil {
+		options = &ListOptions{}
+	}
 	path := fmt.Sprintf("%s/storage/snapshots?offset=%d&limit=%d", storageBasePath, options.Page, options.PerPage)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)

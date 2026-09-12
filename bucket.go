@@ -81,7 +81,7 @@ type ListBucketKeysRoot struct {
 }
 
 func (s *bucketServiceHandler) List(ctx context.Context, options *ListOptions) ([]Bucket, error) {
-	path := fmt.Sprintf("%s", bucketsPath)
+	path := bucketsPath
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *bucketServiceHandler) List(ctx context.Context, options *ListOptions) (
 }
 
 func (s *bucketServiceHandler) Get(ctx context.Context, id string) (*Bucket, error) {
-	path := fmt.Sprintf("%s", bucketPath)
+	path := bucketPath
 
 	getReq := struct {
 		BucketId string `json:"bucketId"`

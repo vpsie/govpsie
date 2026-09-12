@@ -65,6 +65,9 @@ func (i *iPsServiceHandler) ListPrivateIPs(ctx context.Context, options *ListOpt
 }
 
 func (i *iPsServiceHandler) ListPublicIPs(ctx context.Context, options *ListOptions) ([]IP, error) {
+	if options == nil {
+		options = &ListOptions{}
+	}
 	path := fmt.Sprintf("%s/public?offset=%d&limit=%d", ipsPath, options.Page, options.PerPage)
 
 	req, err := i.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -79,6 +82,9 @@ func (i *iPsServiceHandler) ListPublicIPs(ctx context.Context, options *ListOpti
 }
 
 func (i *iPsServiceHandler) ListAllIPs(ctx context.Context, options *ListOptions) ([]IP, error) {
+	if options == nil {
+		options = &ListOptions{}
+	}
 	path := fmt.Sprintf("%s?offset=%d&limit=%d", ipsPath, options.Page, options.PerPage)
 
 	req, err := i.client.NewRequest(ctx, http.MethodGet, path, nil)

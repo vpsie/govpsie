@@ -499,7 +499,7 @@ func (l *lbsServiceHandler) ListOffers(ctx context.Context, dcIdentifier string)
 }
 
 func (l *lbsServiceHandler) ListPendingLBs(ctx context.Context) ([]PendingLB, error) {
-	path := fmt.Sprint("/api/v2/lbs/pending")
+	path := "/api/v2/lbs/pending"
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
