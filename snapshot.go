@@ -325,6 +325,15 @@ func (s *snapshotServiceHandler) GetSnapShotPolicy(ctx context.Context, identifi
 func (s *snapshotServiceHandler) CreateSnapShotPolicy(ctx context.Context, createReq *CreateSnapShotPolicyReq) error {
 	path := fmt.Sprintf("%s/policy/create", snapshotBasePath)
 
+	// The API validates tags and vms as arrays; nil slices marshal to null and
+	// are rejected, so ensure they are sent as empty arrays.
+	if createReq.Tags == nil {
+		createReq.Tags = []string{}
+	}
+	if createReq.Vms == nil {
+		createReq.Vms = []string{}
+	}
+
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createReq)
 	if err != nil {
 		return err

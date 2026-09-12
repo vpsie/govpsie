@@ -122,6 +122,12 @@ func (s *bucketServiceHandler) Get(ctx context.Context, id string) (*Bucket, err
 func (s *bucketServiceHandler) Create(ctx context.Context, createReq *CreateBucketReq) error {
 	path := fmt.Sprintf("%s/create", bucketPath)
 
+	// The API validates tags as an array; a nil slice marshals to null and is
+	// rejected, so ensure it is sent as an empty array.
+	if createReq.Tags == nil {
+		createReq.Tags = []string{}
+	}
+
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createReq)
 	if err != nil {
 		return err
