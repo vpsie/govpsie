@@ -16,6 +16,7 @@ type VPCService interface {
 	MoveServer(ctx context.Context, assignReq *AssignServerReq) error
 	CreateVpc(ctx context.Context, createReq *CreateVpcReq) error
 	ReleasePrivateIP(ctx context.Context, vmIdentifer string, privateIpId int) error
+	ListServers(ctx context.Context, vpcID int) ([]VpcServer, error)
 	DeleteVpc(ctx context.Context, vpcId, reason, note string) error
 }
 
@@ -38,6 +39,26 @@ type GetVPCRoot struct {
 		Rows  []interface{} `json:"rows"`
 		Count int           `json:"count"`
 	} `json:"vpcDetails"`
+}
+
+// VpcServer is a server attached to a VPC, as reported by
+// GET /vpc/vms/{vpcId}. This is the authoritative source for a server's
+// in-VPC address: VPC addresses are not returned by the private-IP listing.
+type VpcServer struct {
+	VmID           int    `json:"vmId"`
+	Identifier     string `json:"identifier"`
+	VpcIP          string `json:"vpc_ip"`
+	Hostname       string `json:"hostname"`
+	FullName       string `json:"fullname"`
+	Category       string `json:"category"`
+	EntityType     string `json:"entity_type"`
+	IsDisconnected int    `json:"is_disconnected"`
+	PrivateIPID    int    `json:"private_ip_id"`
+}
+
+type ListVpcServersRoot struct {
+	Error bool        `json:"error"`
+	Data  []VpcServer `json:"data"`
 }
 
 type AssignServerReq struct {
@@ -188,4 +209,22 @@ func (s *vpcServiceHandler) DeleteVpc(ctx context.Context, vpcId, reason, note s
 	}
 
 	return s.client.Do(ctx, req, nil)
+}
+
+// ListServers returns the servers currently attached to a VPC, including the
+// private address and private-IP id each one was allocated inside it.
+func (s *vpcServiceHandler) ListServers(ctx context.Context, vpcID int) ([]VpcServer, error) {
+	path := fmt.Sprintf("%s/vpc/vms/%d", vpcPath, vpcID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	servers := new(ListVpcServersRoot)
+	if err = s.client.Do(ctx, req, servers); err != nil {
+		return nil, err
+	}
+
+	return servers.Data, nil
 }

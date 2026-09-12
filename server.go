@@ -311,7 +311,7 @@ func (v *serverServiceHandler) GetServerByIdentifier(ctx context.Context, identi
 }
 
 func (v *serverServiceHandler) GetServerStatusByIdentifier(ctx context.Context, identifierId string) (*Status, error) {
-	path := fmt.Sprintf("%s/status/ %s", serverBasePath, identifierId)
+	path := fmt.Sprintf("%s/status/%s", serverBasePath, identifierId)
 	req, err := v.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
