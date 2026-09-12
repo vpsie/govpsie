@@ -22,22 +22,22 @@ type monitoringServiceHandler struct {
 var _ MonitoringService = &monitoringServiceHandler{}
 
 type MonitoringRule struct {
-	ID          int    `json:"id"`
-	UserId 	int    `json:"user_id"`
-	MetricType string `json:"metric_type"`
-	RuleName  string `json:"rule_name"`
-	Condition string `json:"condition"`
-	Email 	string `json:"email"`
-	Threshold int    `json:"threshold"`
+	ID            int    `json:"id"`
+	UserId        int    `json:"user_id"`
+	MetricType    string `json:"metric_type"`
+	RuleName      string `json:"rule_name"`
+	Condition     string `json:"condition"`
+	Email         string `json:"email"`
+	Threshold     int    `json:"threshold"`
 	ThresholdType string `json:"threshold_type"`
-	Period int `json:"period"`
-	Status int `json:"status"`
-	CreatedOn string `json:"created_on"`
-	Frequency int `json:"frequency"`
+	Period        int    `json:"period"`
+	Status        int    `json:"status"`
+	CreatedOn     string `json:"created_on"`
+	Frequency     int    `json:"frequency"`
 	LastAlertDate string `json:"last_alert_date"`
-	Identifier string `json:"identifier"`
-	IsDeleted int `json:"is_deleted"`
-	CreatedBY string `json:"created_by"`
+	Identifier    string `json:"identifier"`
+	IsDeleted     int    `json:"is_deleted"`
+	CreatedBY     string `json:"created_by"`
 }
 
 type ListMonitoringRuleRoot struct {
@@ -47,21 +47,21 @@ type ListMonitoringRuleRoot struct {
 }
 
 type CreateMonitoringRuleReq struct {
-	MetricType string `json:"metricType"`
-	RuleName string `json:"ruleName"`
-	Condition string `json:"condition"`
+	MetricType    string `json:"metricType"`
+	RuleName      string `json:"ruleName"`
+	Condition     string `json:"condition"`
 	ThresholdType string `json:"thresholdType"`
-	ThresholdId string `json:"thresholdId"`
-	Period string `json:"period"`
-	Frequency string `json:"frequency"`
-	Status string `json:"status"`
-	Threshold string `json:"threshold"`
-	Actions struct {
-		Email string `json:"email"`
-		ActionKey string `json:"actionKey"`
+	ThresholdId   string `json:"thresholdId"`
+	Period        string `json:"period"`
+	Frequency     string `json:"frequency"`
+	Status        string `json:"status"`
+	Threshold     string `json:"threshold"`
+	Actions       struct {
+		Email      string `json:"email"`
+		ActionKey  string `json:"actionKey"`
 		ActionName string `json:"actionName"`
 	} `json:"actions"`
-	Vms []string `json:"vms"`
+	Vms  []string `json:"vms"`
 	Tags []string `json:"tags"`
 }
 
@@ -89,17 +89,17 @@ func (s *monitoringServiceHandler) CreateRule(ctx context.Context, createReq *Cr
 		return err
 	}
 
-	return s.client.Do(ctx, req, nil);
+	return s.client.Do(ctx, req, nil)
 }
 
 func (s *monitoringServiceHandler) ToggleMonitoringRuleStatus(ctx context.Context, status, ruleIdentifier string) error {
 	path := fmt.Sprintf("%s/rules/edit", monitoringPath)
 
 	toggleReq := struct {
-		Status string `json:"status"`
+		Status         string `json:"status"`
 		RuleIdentifier string `json:"ruleIdentifier"`
 	}{
-		Status: status,
+		Status:         status,
 		RuleIdentifier: ruleIdentifier,
 	}
 
@@ -108,17 +108,16 @@ func (s *monitoringServiceHandler) ToggleMonitoringRuleStatus(ctx context.Contex
 		return err
 	}
 
-	return s.client.Do(ctx, req, nil);
+	return s.client.Do(ctx, req, nil)
 }
 
 func (s *monitoringServiceHandler) DeleteMonitoringRule(ctx context.Context, ruleIdentifier string) error {
 	path := fmt.Sprintf("%s/rules/%s", monitoringPath, ruleIdentifier)
-
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return err
 	}
 
-	return s.client.Do(ctx, req, nil);
+	return s.client.Do(ctx, req, nil)
 }

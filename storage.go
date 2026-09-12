@@ -178,7 +178,7 @@ type ListStorageDataCenterRoot struct {
 }
 
 func (s *storageServiceHandler) List(ctx context.Context, options *ListOptions) ([]Storage, error) {
-	path := fmt.Sprintf("%s/storages?offset=%d&limit%d", storageBasePath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/storages?offset=%d&limit=%d", storageBasePath, options.Page, options.PerPage)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

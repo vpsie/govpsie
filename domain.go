@@ -87,8 +87,8 @@ type ListDomainVpsieRoot struct {
 
 type CreateDomainRequest struct {
 	ProjectIdentifier string   `json:"projectIdentifier"`
-	Tags         []string `json:"tags,omitempty"`
-	Domain       string   `json:"domain"`
+	Tags              []string `json:"tags,omitempty"`
+	Domain            string   `json:"domain"`
 }
 
 type Record struct {
@@ -120,7 +120,7 @@ type ListReversePTRRoot struct {
 }
 
 func (d *domainsServiceHandler) ListDomainByProject(ctx context.Context, options *ListOptions, projectIdentifier string) ([]Domain, error) {
-	path := fmt.Sprintf("%s/project/%s?offset=%d&limit%d", domainsPath, projectIdentifier, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/project/%s?offset=%d&limit=%d", domainsPath, projectIdentifier, options.Page, options.PerPage)
 
 	req, err := d.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

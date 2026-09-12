@@ -34,7 +34,7 @@ type ListGatewayRoot struct {
 }
 
 type GetGatewayRoot struct {
-	Error bool    `json:"error"`
+	Error bool `json:"error"`
 	Data  struct {
 		Rows                    []Gateway `json:"rows"`
 		IsThereUserGatewayLevel bool      `json:"isThereUserGatewayLevel"`
@@ -115,7 +115,6 @@ func (s *gatewayServiceHandler) Delete(ctx context.Context, ipId int) error {
 	return s.client.Do(ctx, req, nil)
 }
 
-
 func (g *gatewayServiceHandler) Get(ctx context.Context, id int64) (*Gateway, error) {
 	path := fmt.Sprintf("%s/ips?ipId=%d", gatewayPath, id)
 	req, err := g.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -140,12 +139,12 @@ func (g *gatewayServiceHandler) AttachVM(ctx context.Context, id int64, vms []st
 	path := fmt.Sprintf("%s/attach/vms", gatewayPath)
 
 	attReq := struct {
-		Vms []string `json:"vms"`
-		IpId int64 `json:"ipId"`
-		IgnoreLegacyVms int64 `json:"ignoreLegacyVms"`
+		Vms             []string `json:"vms"`
+		IpId            int64    `json:"ipId"`
+		IgnoreLegacyVms int64    `json:"ignoreLegacyVms"`
 	}{
-		Vms: vms,
-		IpId: id,
+		Vms:             vms,
+		IpId:            id,
 		IgnoreLegacyVms: ignoreLegacyVms,
 	}
 

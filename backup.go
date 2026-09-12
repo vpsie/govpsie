@@ -225,8 +225,8 @@ type BackupPolicy struct {
 	CreatedOn  string   `json:"created_on"`
 	CreatedBy  string   `json:"created_by"`
 	BackupPlan string   `json:"backupPlan"`
-	PlanEvery  int   `json:"planEvery"`
-	Keep       int   `json:"keep"`
+	PlanEvery  int      `json:"planEvery"`
+	Keep       int      `json:"keep"`
 	Disabled   int      `json:"disabled"`
 	UserId     int      `json:"userId"`
 	Vms        []string `json:"vms"`
@@ -238,8 +238,8 @@ type BackupPolicyListDetail struct {
 	CreatedOn  string `json:"created_on"`
 	CreatedBy  string `json:"created_by"`
 	BackupPlan string `json:"backupPlan"`
-	PlanEvery  int `json:"planEvery"`
-	Keep       int `json:"keep"`
+	PlanEvery  int    `json:"planEvery"`
+	Keep       int    `json:"keep"`
 	Disabled   int    `json:"disabled"`
 	VmsCount   int    `json:"vmsCount"`
 	UserId     int    `json:"userId"`

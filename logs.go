@@ -99,7 +99,7 @@ type ListVmLogsRoot struct {
 var _ LogsService = &logsServiceHandler{}
 
 func (l *logsServiceHandler) ListActivityLogs(ctx context.Context, options *ListOptions) ([]ActivityLog, error) {
-	path := fmt.Sprintf("%s/activity?offset=%d&limit%d", logsPath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/activity?offset=%d&limit=%d", logsPath, options.Page, options.PerPage)
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -115,7 +115,7 @@ func (l *logsServiceHandler) ListActivityLogs(ctx context.Context, options *List
 }
 
 func (l *logsServiceHandler) ListBillingLogs(ctx context.Context, options *ListOptions) ([]BillingLog, error) {
-	path := fmt.Sprintf("%s/billing?offset=%d&limit%d", logsPath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/billing?offset=%d&limit=%d", logsPath, options.Page, options.PerPage)
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -131,7 +131,7 @@ func (l *logsServiceHandler) ListBillingLogs(ctx context.Context, options *ListO
 }
 
 func (l *logsServiceHandler) ListAuditLogs(ctx context.Context, options *ListOptions) ([]AuditLog, error) {
-	path := fmt.Sprintf("%s/audit?offset=%d&limit%d", logsPath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/audit?offset=%d&limit=%d", logsPath, options.Page, options.PerPage)
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -146,7 +146,7 @@ func (l *logsServiceHandler) ListAuditLogs(ctx context.Context, options *ListOpt
 	return root.Data, nil
 }
 func (l *logsServiceHandler) ListVPSieLogs(ctx context.Context, options *ListOptions) ([]VmLog, error) {
-	path := fmt.Sprintf("%s/vm?offset=%d&limit%d", logsPath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/vm?offset=%d&limit=%d", logsPath, options.Page, options.PerPage)
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

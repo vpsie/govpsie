@@ -18,7 +18,7 @@
 // # Services
 //
 // Each API area is exposed as a service field on Client (for example
-// client.Server, client.Storage, client.Kubernetes, client.ManagedDB). Every
+// client.Server, client.Storage, client.K8s, client.ManagedDB). Every
 // request flows through Client.NewRequest and Client.Do, which unwraps the
 // standard response envelope {error, data, total} and converts a non-2xx status
 // into an error carrying the API message.

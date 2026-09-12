@@ -85,7 +85,7 @@ type EnableAutoSnapshotReq struct {
 }
 
 func (s *snapshotServiceHandler) List(ctx context.Context, options *ListOptions) ([]Snapshot, error) {
-	path := fmt.Sprintf("%s?offset=%d&limit%d", snapshotBasePath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s?offset=%d&limit=%d", snapshotBasePath, options.Page, options.PerPage)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -159,7 +159,7 @@ func (s *snapshotServiceHandler) Update(ctx context.Context, snapshotIdentifier,
 }
 
 func (s *snapshotServiceHandler) ListByVm(ctx context.Context, options *ListOptions, vmIdentifier string) ([]Snapshot, error) {
-	path := fmt.Sprintf("/apps/v2/vm/snapshot/%s?offset=%d&limit%d", vmIdentifier, options.Page, options.PerPage)
+	path := fmt.Sprintf("/apps/v2/vm/snapshot/%s?offset=%d&limit=%d", vmIdentifier, options.Page, options.PerPage)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

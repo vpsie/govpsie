@@ -68,16 +68,16 @@ type Bucket struct {
 }
 
 type BucketKey struct {
-	AccessKey string `json:"accessKey"`
-	SecretKey string `json:"secretKey"`
-	KeyName string `json:"key_name"`
-	CreatedON string `json:"created_on"`
+	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"`
+	KeyName    string `json:"key_name"`
+	CreatedON  string `json:"created_on"`
 	Identifier string `json:"identifier"`
 }
 
 type ListBucketKeysRoot struct {
-	Error bool `json:"error"`
-	Data []BucketKey `json:"data"`
+	Error bool        `json:"error"`
+	Data  []BucketKey `json:"data"`
 }
 
 func (s *bucketServiceHandler) List(ctx context.Context, options *ListOptions) ([]Bucket, error) {
@@ -134,20 +134,19 @@ func (s *bucketServiceHandler) Delete(ctx context.Context, buckId, reason, note 
 	path := fmt.Sprintf("%s/delete", bucketPath)
 
 	deleteReq := struct {
-		BucketId string `json:"bucketId"`
+		BucketId        string `json:"bucketId"`
 		DeleteStatistic struct {
-			Reason   string `json:"reason"`
-			Note     string `json:"note"`
+			Reason string `json:"reason"`
+			Note   string `json:"note"`
 		} `json:"deleteStatistic"`
-	
 	}{
 		BucketId: buckId,
 		DeleteStatistic: struct {
-			Reason   string `json:"reason"`
-			Note     string `json:"note"`
+			Reason string `json:"reason"`
+			Note   string `json:"note"`
 		}{
 			Reason: reason,
-			Note: note,
+			Note:   note,
 		},
 	}
 
@@ -224,8 +223,8 @@ func (s *bucketServiceHandler) ListBucketKeys(ctx context.Context) ([]BucketKey,
 
 	root := new(ListBucketKeysRoot)
 	if err := s.client.Do(ctx, req, root); err != nil {
-		return nil, err 
+		return nil, err
 	}
 
-	return root.Data, nil 
+	return root.Data, nil
 }

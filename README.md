@@ -10,6 +10,12 @@ balancers, Kubernetes, container registries, managed databases and more, and is
 the SDK that powers the
 [VPSie Terraform provider](https://github.com/vpsie/terraform-provider-vpsie).
 
+## Contents
+
+- [Architecture](#architecture) · [Requirements](#requirements) · [Installation](#installation) · [Authentication](#authentication)
+- [Services](#services) · [Usage examples](#usage-examples) · [Pagination](#pagination) · [Error handling](#error-handling)
+- [Runnable example](#runnable-example) · [Testing](#testing) · [Contributing](#contributing) · [License](#license)
+
 ## Architecture
 
 ```mermaid
@@ -26,6 +32,19 @@ Every service is reached through a single `*govpsie.Client`. A request flows
 `Client.NewRequest` → `Client.Do`, which unwraps the standard response envelope
 `{ "error": bool, "data": ..., "total": int }` and turns a non-2xx status into a
 Go `error` carrying the API message.
+
+```mermaid
+sequenceDiagram
+    participant App as Your code
+    participant C as govpsie.Client
+    participant API as VPSie API
+    App->>C: client.Server.List(ctx, opts)
+    C->>C: NewRequest (adds Vpsie-Auth + JSON headers)
+    C->>API: GET /apps/v2/servers
+    API-->>C: 200 { error, data, total }
+    C->>C: Do (unwrap envelope / map errors)
+    C-->>App: []VmData, nil
+```
 
 ## Requirements
 
@@ -161,6 +180,9 @@ opts := &govpsie.ListOptions{Page: 1, PerPage: 50}
 storages, err := client.Storage.List(ctx, opts)
 ```
 
+> Note: paginated endpoints translate `Page` to the API's `offset` and `PerPage`
+> to `limit` (i.e. `Page` is a record offset, not a 1-based page index).
+
 ## Error handling
 
 `Client.Do` returns an `error` for any non-2xx response, using the API's
@@ -170,6 +192,24 @@ storages, err := client.Storage.List(ctx, opts)
 if _, err := client.Server.Get(ctx, "does-not-exist"); err != nil {
 	// err.Error() contains the API-provided message.
 }
+```
+
+## Runnable example
+
+A complete, runnable program lives in [`examples/basic`](examples/basic). It
+lists your datacenters and servers:
+
+```sh
+export VPSIE_ACCESS_TOKEN="your-api-token"
+go run ./examples/basic
+```
+
+Common developer tasks are wrapped in the [`Makefile`](Makefile):
+
+```sh
+make          # fmt, vet, build, test
+make test     # run tests
+make build    # compile all packages
 ```
 
 ## Testing

@@ -1,0 +1,28 @@
+# Build, vet and test the govpsie SDK on every push and pull request.
+name: Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+  push:
+    paths-ignore:
+      - 'README.md'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - run: go build -v ./...
+      - run: go vet ./...
+      - run: go test -v -count=1 ./...

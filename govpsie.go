@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -166,7 +167,7 @@ func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body int
 	var req *http.Request
 	switch method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions:
-		req, err = http.NewRequest(method, u.String(), nil)
+		req, err = http.NewRequestWithContext(ctx, method, u.String(), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +181,7 @@ func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body int
 			}
 		}
 
-		req, err = http.NewRequest(method, u.String(), buf)
+		req, err = http.NewRequestWithContext(ctx, method, u.String(), buf)
 		if err != nil {
 			return nil, err
 		}
@@ -199,8 +200,7 @@ func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body int
 
 func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) error {
 
-	req = req.WithContext(ctx)
-	res, err := c.client.Do(req)
+	res, err := c.client.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -218,8 +218,10 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) error
 
 	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
 		var errRsp ErrorRsp
-		if err := json.Unmarshal(body, &errRsp); err != nil {
-			return err
+		if jsonErr := json.Unmarshal(body, &errRsp); jsonErr != nil || errRsp.Message == "" {
+			// The body was not the expected JSON envelope (e.g. an HTML error
+			// page from a proxy) or carried no message; fall back to the status.
+			return fmt.Errorf("vpsie: unexpected response: %d %s", res.StatusCode, http.StatusText(res.StatusCode))
 		}
 
 		return errors.New(errRsp.Message)
