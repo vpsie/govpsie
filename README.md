@@ -155,11 +155,12 @@ Provision and scale a managed database:
 
 ```go
 err := client.ManagedDB.Create(ctx, &govpsie.CreateManagedDBRequest{
-	Name:         "app-db",
-	DBType:       "mysql",
-	DcIdentifier: "ams1",
-	PlanID:       1,
-	NodeCount:    1,
+	ClusterName:        "app-db",
+	DcIdentifier:       "datacenter-identifier",
+	ResourceIdentifier: "offer-identifier",
+	NodesCount:         1,
+	VpcID:              1234,
+	ProjectIdentifier:  "project-identifier",
 })
 if err != nil {
 	log.Fatal(err)

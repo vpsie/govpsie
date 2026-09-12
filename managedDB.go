@@ -87,6 +87,7 @@ type ManagedDBDetails struct {
 	Nickname      string          `json:"nickname"`
 	NodesCount    int64           `json:"nodes_count"`
 	AdminPassword string          `json:"admin_password"`
+	PrivateFqdn   string          `json:"private_fqdn"`
 	CPU           int64           `json:"cpu"`
 	RAM           int64           `json:"ram"`
 	Traffic       int64           `json:"traffic"`
@@ -107,12 +108,13 @@ type ManagedDBOffer struct {
 
 // CreateManagedDBRequest is the payload for creating a managed database cluster.
 type CreateManagedDBRequest struct {
-	Name         string `json:"name"`
-	DBType       string `json:"dbType"`
-	DcIdentifier string `json:"dcIdentifier"`
-	NodeCount    int64  `json:"nodeCount"`
-	PlanID       int64  `json:"planId"`
-	ProjectID    string `json:"projectId,omitempty"`
+	ClusterName        string `json:"clusterName"`
+	DcIdentifier       string `json:"dcIdentifier"`
+	ResourceIdentifier string `json:"resourceIdentifier"`
+	NodesCount         int64  `json:"nodesCount"`
+	VpcID              int64  `json:"vpcId"`
+	ProjectIdentifier  string `json:"projectIdentifier"`
+	PrivateFqdn        string `json:"privateFqdn,omitempty"`
 }
 
 type managedDBListRoot struct {
