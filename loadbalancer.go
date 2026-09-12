@@ -2,13 +2,13 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 )
 
-var lbPath = "/api/v1/lb"
+var lbPath = "/apps/v2/lb"
 
 type LBsService interface {
 	ListLBs(ctx context.Context, options *ListOptions) ([]LB, error)
@@ -27,6 +27,8 @@ type LBsService interface {
 	DeleteLBDomain(ctx context.Context, domainID string) error
 	DeleteLBBackend(ctx context.Context, lbBackendID string) error
 	ListPendingLBs(ctx context.Context) ([]PendingLB, error)
+	AddLBBackend(ctx context.Context, addBackendReq *AddBackendReq) error
+	UpdateLBName(ctx context.Context, lbIdentifier, lbName string) error
 }
 
 type lbsServiceHandler struct {
@@ -42,8 +44,8 @@ type ListLBsRoot struct {
 }
 
 type GetLBRoot struct {
-	Error bool      `json:"error"`
-	Data  LBDetails `json:"data"`
+	Error bool            `json:"error"`
+	Data  json.RawMessage `json:"data"`
 }
 
 type ListLBDataCentersRoot struct {
@@ -118,44 +120,65 @@ type LB struct {
 	UserID     int    `json:"user_id"`
 }
 
+// CreateLBReq is the request body for POST /lb/create.
+//
+// The field set mirrors the API's `createLoadBalancer` validation schema
+// exactly. The schema rejects unknown keys, so per-rule/per-domain tuning
+// (algorithm, cookies, health checks, intervals) must be supplied inside
+// Rules[].Domains[] rather than at the top level.
 type CreateLBReq struct {
-	Algorithm          string `json:"algorithm"`
-	CookieName         string `json:"cookieName"`
-	HealthCheckPath    string `json:"healthCheckPath,omitempty"`
-	CookieCheck        bool   `json:"cookieCheck"`
-	RedirectHTTP       int    `json:"redirectHTTP"`
-	LBName             string `json:"lbName"`
-	ResourceIdentifier string `json:"resourceIdentifier"`
-	DcIdentifier       string `json:"dcIdentifier"`
-	Rule               []Rule `json:"rules"`
-	CheckInterval      int    `json:"checkInterval,omitempty"`
-	FastInterval       int    `json:"fastInterval,omitempty"`
-	Rise               int    `json:"rise,omitempty"`
-	Fall               int    `json:"fall,omitempty"`
-	VpcID              int    `json:"vpcId,omitempty"`
+	LBName             string   `json:"lbName"`
+	DcIdentifier       string   `json:"dcIdentifier"`
+	ResourceIdentifier string   `json:"resourceIdentifier"`
+	PrivateLB          int      `json:"privatelb"`
+	VpcID              int      `json:"vpcId,omitempty"`
+	ProjectID          string   `json:"projectId,omitempty"`
+	Rules              []Rule   `json:"rules"`
+	InputTags          []string `json:"inputTags"`
+	CreateFromPool     string   `json:"createFromPool,omitempty"`
 }
 
+// AddRuleReq is the request body for POST /lb/rule/add (addRuleToLB).
 type AddRuleReq struct {
-	Scheme    string     `json:"scheme"`
-	FrontPort string     `json:"frontPort"`
-	BackPort  string     `json:"backPort"`
 	LbId      string     `json:"lbId"`
+	Scheme    string     `json:"scheme"`
+	FrontPort int        `json:"frontPort"`
+	BackPort  int        `json:"backPort,omitempty"`
+	ProxyMode bool       `json:"proxy_mode"`
 	Domains   []LBDomain `json:"domains"`
+	Backends  []Backend  `json:"backends"`
 }
+
+// Rule is a single listener on the load balancer (lbRuleSchema).
+// BackPort is required when Scheme is "tcp" and optional otherwise.
 type Rule struct {
-	Scheme     string     `json:"scheme"`
-	FrontPort  string     `json:"frontPort"`
-	Domains    []LBDomain `json:"domains"`
-	Backends   []Backend  `json:"backends"`
-	BackPort   string     `json:"backPort"`
-	DomainName string     `json:"domainName"`
+	Scheme    string     `json:"scheme"`
+	FrontPort int        `json:"frontPort"`
+	BackPort  int        `json:"backPort,omitempty"`
+	ProxyMode bool       `json:"proxy_mode"`
+	Domains   []LBDomain `json:"domains"`
+	Backends  []Backend  `json:"backends"`
 }
+
+// LBDomain is a virtual host under a rule (lbDomainSchema). It is the
+// request-side type; responses are decoded into LBDomainsDetail.
 type LBDomain struct {
-	DomainID      string    `json:"domainId"`
-	Backends      []Backend `json:"backends"`
-	BackPort      string    `json:"backPort"`
-	BackendScheme string    `json:"backendScheme"`
-	DomainName    string    `json:"domainName"`
+	DomainID        string    `json:"domainId,omitempty"`
+	DomainName      string    `json:"domainName,omitempty"`
+	Subdomain       string    `json:"subdomain,omitempty"`
+	BackPort        int       `json:"backPort,omitempty"`
+	Algorithm       string    `json:"algorithm,omitempty"`
+	RedirectHTTP    int       `json:"redirectHTTP"`
+	CookieCheck     bool      `json:"cookieCheck"`
+	CookieName      string    `json:"cookieName,omitempty"`
+	CheckInterval   int       `json:"checkInterval,omitempty"`
+	FastInterval    int       `json:"fastInterval,omitempty"`
+	Rise            int       `json:"rise,omitempty"`
+	Fall            int       `json:"fall,omitempty"`
+	HealthCheckPath string    `json:"healthCheckPath,omitempty"`
+	BackendScheme   string    `json:"backendScheme,omitempty"`
+	PassThrough     bool      `json:"passThrough"`
+	Backends        []Backend `json:"backends"`
 }
 type Backend struct {
 	Ip           string `json:"ip"`
@@ -173,12 +196,14 @@ type LBDataCenter struct {
 	IsDeleted  int    `json:"is_deleted"`
 }
 
+// RuleUpdateReq is the request body for POST /lb/rule/update (updatelbRule).
 type RuleUpdateReq struct {
 	RuleID    string    `json:"ruleId"`
-	Backends  []Backend `json:"backends"`
-	BackPort  int       `json:"backPort"`
 	Scheme    string    `json:"scheme"`
 	FrontPort int       `json:"frontPort"`
+	BackPort  int       `json:"backPort,omitempty"`
+	ProxyMode bool      `json:"proxy_mode"`
+	Backends  []Backend `json:"backends"`
 }
 
 type LBOffers struct {
@@ -195,30 +220,49 @@ type LBOffers struct {
 	Description string `json:"description"`
 }
 
+// DomainAddReq is the request body for POST /lb/domain/add (addLbDomainToRule).
 type DomainAddReq struct {
-	RuleID       string    `json:"ruleId"`
-	DomainName   string    `json:"domainName"`
-	DomainID     string    `json:"domainId"`
-	Algorithm    string    `json:"algorithm"`
-	RedirectHTTP int       `json:"redirectHTTP"`
-	CookieCheck  bool      `json:"cookieCheck"`
-	CookieName   string    `json:"cookieName"`
-	BackPort     int       `json:"backPort"`
-	Backends     []Backend `json:"backends"`
+	RuleID          string    `json:"ruleId"`
+	DomainID        string    `json:"domainId,omitempty"`
+	DomainName      string    `json:"domainName,omitempty"`
+	Subdomain       string    `json:"subdomain,omitempty"`
+	BackPort        int       `json:"backPort,omitempty"`
+	Algorithm       string    `json:"algorithm,omitempty"`
+	RedirectHTTP    int       `json:"redirectHTTP"`
+	CookieCheck     bool      `json:"cookieCheck"`
+	CookieName      string    `json:"cookieName,omitempty"`
+	CheckInterval   int       `json:"checkInterval,omitempty"`
+	FastInterval    int       `json:"fastInterval,omitempty"`
+	Rise            int       `json:"rise,omitempty"`
+	Fall            int       `json:"fall,omitempty"`
+	HealthCheckPath string    `json:"healthCheckPath,omitempty"`
+	BackendScheme   string    `json:"backendScheme,omitempty"`
+	Backends        []Backend `json:"backends"`
 }
 
+// AddBackendReq is the request body for POST /lb/backend/add (addLbBackend).
+// Exactly one of DomainID or RuleID must be set.
+type AddBackendReq struct {
+	DomainID string    `json:"domainId,omitempty"`
+	RuleID   string    `json:"ruleId,omitempty"`
+	Backends []Backend `json:"backends"`
+}
+
+// DomainUpdateReq is the request body for POST /lb/domain/update (updatelbDomain).
 type DomainUpdateReq struct {
-	DomainID      string `json:"domainId"`
-	Subdomain     string `json:"subdomain"`
-	Algorithm     string `json:"algorithm"`
-	RedirectHTTP  int    `json:"redirectHTTP"`
-	CookieCheck   bool   `json:"cookieCheck"`
-	CookieName    string `json:"cookieName"`
-	BackPort      int    `json:"backPort"`
-	CheckInterval int    `json:"checkInterval"`
-	FastInterval  int    `json:"fastInterval"`
-	Rise          int    `json:"rise"`
-	Fall          int    `json:"fall"`
+	DomainID        string `json:"domainId"`
+	Algorithm       string `json:"algorithm"`
+	Subdomain       string `json:"subdomain,omitempty"`
+	RedirectHTTP    int    `json:"redirectHTTP"`
+	CookieCheck     bool   `json:"cookieCheck"`
+	CookieName      string `json:"cookieName,omitempty"`
+	BackPort        int    `json:"backPort"`
+	CheckInterval   int    `json:"checkInterval"`
+	FastInterval    int    `json:"fastInterval"`
+	Rise            int    `json:"rise"`
+	Fall            int    `json:"fall"`
+	HealthCheckPath string `json:"healthCheckPath,omitempty"`
+	BackendScheme   string `json:"backendScheme,omitempty"`
 }
 
 type ListOffersRoot struct {
@@ -281,12 +325,23 @@ func (l *lbsServiceHandler) GetLB(ctx context.Context, lbID string) (*LBDetails,
 		return nil, err
 	}
 
-	lb := new(GetLBRoot)
-	if err := l.client.Do(ctx, req, &lb); err != nil {
+	root := new(GetLBRoot)
+	if err := l.client.Do(ctx, req, root); err != nil {
 		return nil, err
 	}
 
-	return &lb.Data, nil
+	// A load balancer that no longer exists is reported as `"data": false`
+	// rather than a 404, so treat an absent payload as not-found.
+	if isNullData(root.Data) {
+		return nil, nil
+	}
+
+	var lb LBDetails
+	if err := json.Unmarshal(root.Data, &lb); err != nil {
+		return nil, err
+	}
+
+	return &lb, nil
 }
 
 func (l *lbsServiceHandler) ListLBDataCenters(ctx context.Context, options *ListOptions) ([]LBDataCenter, error) {
@@ -308,7 +363,6 @@ func (l *lbsServiceHandler) ListLBDataCenters(ctx context.Context, options *List
 func (l *lbsServiceHandler) CreateLB(ctx context.Context, createLBReq *CreateLBReq) error {
 	path := fmt.Sprintf("%s/create", lbPath)
 
-	log.Println("createLBReq", createLBReq)
 	req, err := l.client.NewRequest(ctx, http.MethodPost, path, createLBReq)
 	if err != nil {
 		return err
@@ -499,7 +553,7 @@ func (l *lbsServiceHandler) ListOffers(ctx context.Context, dcIdentifier string)
 }
 
 func (l *lbsServiceHandler) ListPendingLBs(ctx context.Context) ([]PendingLB, error) {
-	path := "/api/v2/lbs/pending"
+	path := "/apps/v2/lbs/pending"
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -516,4 +570,36 @@ func (l *lbsServiceHandler) ListPendingLBs(ctx context.Context) ([]PendingLB, er
 	}
 
 	return pendingLbs.Data[0], nil
+}
+
+// AddLBBackend attaches one or more backends to an existing rule or domain.
+func (l *lbsServiceHandler) AddLBBackend(ctx context.Context, addBackendReq *AddBackendReq) error {
+	path := fmt.Sprintf("%s/backend/add", lbPath)
+
+	req, err := l.client.NewRequest(ctx, http.MethodPost, path, addBackendReq)
+	if err != nil {
+		return err
+	}
+
+	return l.client.Do(ctx, req, nil)
+}
+
+// UpdateLBName renames an existing load balancer in place.
+func (l *lbsServiceHandler) UpdateLBName(ctx context.Context, lbIdentifier, lbName string) error {
+	path := fmt.Sprintf("%s/name/update", lbPath)
+
+	renameReq := struct {
+		LbIdentifier string `json:"lbIdentifier"`
+		LBName       string `json:"lbName"`
+	}{
+		LbIdentifier: lbIdentifier,
+		LBName:       lbName,
+	}
+
+	req, err := l.client.NewRequest(ctx, http.MethodPost, path, renameReq)
+	if err != nil {
+		return err
+	}
+
+	return l.client.Do(ctx, req, nil)
 }
