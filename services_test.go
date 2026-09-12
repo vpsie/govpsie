@@ -275,6 +275,82 @@ func TestSnapshotPolicy_GetNotFound(t *testing.T) {
 	}
 }
 
+func TestMonitoring_CreateSendsNestedShape(t *testing.T) {
+	var got map[string]interface{}
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/apps/v2/monitoring/rules/add" {
+			t.Errorf("got %s %s", r.Method, r.URL.Path)
+		}
+		got = decodeBody(t, r)
+		_, _ = w.Write([]byte(`{"error":false,"data":true}`))
+	})
+
+	req := &CreateMonitoringRuleReq{
+		RuleName:  "cpu-high",
+		Status:    "1",
+		Frequency: "1",
+		Rules: []CreateMonitoringMetricReq{{
+			MetricType: "cpu", Condition: "greater_than", Threshold: "80",
+			ThresholdType: "percentage", Period: "5", Status: "1",
+			Actions: []CreateMonitoringActionReq{{ActionName: "send_alert", ActionKey: "send_alert", Email: "a@b.c"}},
+		}},
+	}
+	if err := c.Monitoring.CreateRule(context.Background(), req); err != nil {
+		t.Fatalf("CreateRule: %v", err)
+	}
+	if got["ruleName"] != "cpu-high" {
+		t.Errorf("missing ruleName: %+v", got)
+	}
+	rules, ok := got["rules"].([]interface{})
+	if !ok || len(rules) != 1 {
+		t.Fatalf("expected nested rules array, got %+v", got["rules"])
+	}
+	metric := rules[0].(map[string]interface{})
+	if metric["metricType"] != "cpu" || metric["threshold"] != "80" {
+		t.Errorf("unexpected metric: %+v", metric)
+	}
+	actions, ok := metric["actions"].([]interface{})
+	if !ok || len(actions) != 1 || actions[0].(map[string]interface{})["actionKey"] != "send_alert" {
+		t.Errorf("unexpected actions: %+v", metric["actions"])
+	}
+	if _, ok := got["vms"].([]interface{}); !ok {
+		t.Errorf("vms must be sent as an array, got %+v", got["vms"])
+	}
+}
+
+func TestMonitoring_GetFiltersByIdentifier(t *testing.T) {
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("ruleIdentifier") != "rule-1" {
+			t.Errorf("expected ruleIdentifier query, got %q", r.URL.RawQuery)
+		}
+		_, _ = w.Write([]byte(`{"error":false,"total":[{"count":1}],"data":[{"identifier":"rule-1","rule_name":"cpu-high","status":1,"frequency":1,"rules":[{"metric_type":"cpu","condition":"greater_than","threshold":80,"threshold_type":"percentage","period":5,"status":1,"actions":[{"action_name":"send_alert","action_key":"send_alert","email":"a@b.c","value":null}]}],"vms":[]}]}`))
+	})
+
+	rule, err := c.Monitoring.GetMonitoringRule(context.Background(), "rule-1")
+	if err != nil {
+		t.Fatalf("GetMonitoringRule: %v", err)
+	}
+	if rule == nil || rule.RuleName != "cpu-high" || len(rule.Metrics) != 1 {
+		t.Fatalf("unexpected rule: %+v", rule)
+	}
+	if rule.Metrics[0].Threshold != 80 || len(rule.Metrics[0].Actions) != 1 {
+		t.Errorf("unexpected metric: %+v", rule.Metrics[0])
+	}
+}
+
+func TestMonitoring_GetNotFound(t *testing.T) {
+	c := setup(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"error":false,"total":[{"count":0}],"data":[]}`))
+	})
+	rule, err := c.Monitoring.GetMonitoringRule(context.Background(), "gone")
+	if err != nil {
+		t.Fatalf("GetMonitoringRule: %v", err)
+	}
+	if rule != nil {
+		t.Fatalf("expected nil for not-found, got %+v", rule)
+	}
+}
+
 func TestManagedDB_AddNodeSendsRequiredFields(t *testing.T) {
 	var got map[string]interface{}
 	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
