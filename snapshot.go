@@ -144,7 +144,7 @@ func (s *snapshotServiceHandler) Get(ctx context.Context, buckupIdentifier strin
 }
 
 func (s *snapshotServiceHandler) Update(ctx context.Context, snapshotIdentifier, newNote string) error {
-	path := "/api/v2/backups/update"
+	path := "/apps/v2/backups/update"
 
 	updateReq := struct {
 		Identifier string `json:"identifier"`
