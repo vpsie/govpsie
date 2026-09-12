@@ -329,7 +329,7 @@ func (f *firewallGroupServiceHandler) DetachFromVpsie(ctx context.Context, group
 		GroupID: groupId,
 	}
 
-	req, err := f.client.NewRequest(ctx, http.MethodPost, path, assignReq)
+	req, err := f.client.NewRequest(ctx, http.MethodDelete, path, assignReq)
 	if err != nil {
 		return err
 	}
