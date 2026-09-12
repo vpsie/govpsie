@@ -146,7 +146,7 @@ if err != nil {
 fmt.Println("tag:", tagID)
 
 // Create a container registry.
-if err := client.Registry.Create(ctx, "my-registry", "ams1", "plan-identifier"); err != nil {
+if err := client.Registry.Create(ctx, "my-registry", "datacenter-identifier", "plan-identifier", "project-identifier"); err != nil {
 	log.Fatal(err)
 }
 ```

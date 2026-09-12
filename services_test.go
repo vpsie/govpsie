@@ -135,7 +135,7 @@ func TestRegistry_CreateAndCheckName(t *testing.T) {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			got := decodeBody(t, r)
-			if got["name"] != "reg1" || got["dcIdentifier"] != "ams1" {
+			if got["name"] != "reg1" || got["datacenterId"] != "ams1" || got["resourceIdentifier"] != "plan1" || got["projectId"] != "proj1" {
 				t.Errorf("unexpected body: %+v", got)
 			}
 			_, _ = w.Write([]byte(`{"error":false,"data":{}}`))
@@ -147,7 +147,7 @@ func TestRegistry_CreateAndCheckName(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	if err := c.Registry.Create(ctx, "reg1", "ams1", "plan1"); err != nil {
+	if err := c.Registry.Create(ctx, "reg1", "ams1", "plan1", "proj1"); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
 	taken, err := c.Registry.CheckName(ctx, "reg1")

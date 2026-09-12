@@ -11,7 +11,7 @@ var registryBasePath = "/apps/v2/registries"
 // RegistryService is the interface for managing container registries.
 type RegistryService interface {
 	List(ctx context.Context) ([]Registry, error)
-	Create(ctx context.Context, name, dcIdentifier, planIdentifier string) error
+	Create(ctx context.Context, name, datacenterID, resourceIdentifier, projectID string) error
 	Delete(ctx context.Context, registryID string) error
 	CheckName(ctx context.Context, name string) (bool, error)
 	AssignProject(ctx context.Context, registryIdentifier, projectIdentifier string) error
@@ -29,15 +29,19 @@ var _ RegistryService = &registryServiceHandler{}
 // only loosely specified upstream, so fields are mapped best-effort; unknown
 // API fields are ignored rather than causing an error.
 type Registry struct {
-	Identifier     string `json:"identifier"`
-	Name           string `json:"name"`
+	Identifier     string `json:"registry_id"`
+	Name           string `json:"registry_name"`
 	DcIdentifier   string `json:"dcIdentifier"`
-	DatacenterName string `json:"datacenterName"`
+	DatacenterName string `json:"dc_name"`
+	RegistryPlanID int64  `json:"registry_plan_id"`
+	DatacenterID   int64  `json:"datacenter_id"`
+	ProjectID      int64  `json:"project_id"`
 	PlanIdentifier string `json:"planIdentifier"`
 	Status         string `json:"status"`
 	UserID         int64  `json:"user_id"`
 	CreatedOn      string `json:"created_on"`
-	UpdatedOn      string `json:"updated_on"`
+	UpdatedOn      string `json:"updated_at"`
+	CreatedBy      string `json:"created_by"`
 }
 
 // RegistryPlan is a resource plan available for registries.
@@ -88,15 +92,17 @@ func (s *registryServiceHandler) List(ctx context.Context) ([]Registry, error) {
 	return root.Data, nil
 }
 
-func (s *registryServiceHandler) Create(ctx context.Context, name, dcIdentifier, planIdentifier string) error {
+func (s *registryServiceHandler) Create(ctx context.Context, name, datacenterID, resourceIdentifier, projectID string) error {
 	createReq := struct {
-		Name           string `json:"name"`
-		DcIdentifier   string `json:"dcIdentifier"`
-		PlanIdentifier string `json:"planIdentifier"`
+		Name               string `json:"name"`
+		DatacenterID       string `json:"datacenterId"`
+		ResourceIdentifier string `json:"resourceIdentifier"`
+		ProjectID          string `json:"projectId"`
 	}{
-		Name:           name,
-		DcIdentifier:   dcIdentifier,
-		PlanIdentifier: planIdentifier,
+		Name:               name,
+		DatacenterID:       datacenterID,
+		ResourceIdentifier: resourceIdentifier,
+		ProjectID:          projectID,
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, registryBasePath, &createReq)
