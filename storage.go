@@ -458,7 +458,7 @@ func (s *storageServiceHandler) CreateSnapshot(ctx context.Context, storageIdent
 }
 
 func (s *storageServiceHandler) ListSnapshots(ctx context.Context, options *ListOptions) ([]StorageSnapShot, error) {
-	path := fmt.Sprintf("%s/storage/snapshots?offset=%s&limit=%s", storageBasePath, options.Page, options.PerPage)
+	path := fmt.Sprintf("%s/storage/snapshots?offset=%d&limit=%d", storageBasePath, options.Page, options.PerPage)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

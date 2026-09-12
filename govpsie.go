@@ -55,6 +55,11 @@ type Client struct {
 	AccessToken   AccessTokenService
 	Billing       BillingService
 	Monitoring    MonitoringService
+	Tags          TagsService
+	Certificate   CertificateService
+	ServerGroup   ServerGroupService
+	Registry      RegistryService
+	ManagedDB     ManagedDBService
 }
 
 type ErrorRsp struct {
@@ -117,6 +122,11 @@ func NewClient(httpClient *http.Client) *Client {
 	c.AccessToken = &accessTokenServiceHandler{client: c}
 	c.Billing = &billingServiceHandler{client: c}
 	c.Monitoring = &monitoringServiceHandler{client: c}
+	c.Tags = &tagsServiceHandler{client: c}
+	c.Certificate = &certificateServiceHandler{client: c}
+	c.ServerGroup = &serverGroupServiceHandler{client: c}
+	c.Registry = &registryServiceHandler{client: c}
+	c.ManagedDB = &managedDBServiceHandler{client: c}
 
 	c.headers = make(map[string]string)
 	return c
