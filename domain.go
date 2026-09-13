@@ -369,7 +369,7 @@ func (d *domainsServiceHandler) DeleteDomain(ctx context.Context, domainIdentifi
 		DeleteStatistic  struct {
 			Reason string `json:"reason"`
 			Note   string `json:"note"`
-		}
+		} `json:"deleteStatistic"`
 	}{
 		DomainIdentifier: domainIdentifier,
 		DeleteStatistic: struct {

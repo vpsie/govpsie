@@ -92,7 +92,7 @@ type CreateK8sReq struct {
 	NodesCountMaster   int    `json:"nodesCountMaster"`
 	NodesCountSlave    int    `json:"nodesCountSlave"`
 	VpcId              int    `json:"vpcId"`
-	KuberVer           int    `json:"kuberVer"`
+	KuberVer           string `json:"kuberVer"`
 	ResourceIdentifier string `json:"resourceIdentifier"`
 	ProjectIdentifier  string `json:"projectIdentifier"`
 }
