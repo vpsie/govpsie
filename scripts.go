@@ -105,7 +105,14 @@ func (s *scriptsServiceHandler) GetScript(ctx context.Context, scriptId string) 
 func (s *scriptsServiceHandler) CreateScript(ctx context.Context, createScriptRequest *CreateScriptRequest) error {
 	path := fmt.Sprintf("%s/script/add", scriptsBasePath)
 
-	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createScriptRequest)
+	// The API requires tags to be an array; a nil slice would encode as null
+	// and be rejected, so send an empty list instead.
+	body := *createScriptRequest
+	if body.Tags == nil {
+		body.Tags = []string{}
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, &body)
 	if err != nil {
 		return err
 	}

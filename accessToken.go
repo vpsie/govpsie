@@ -10,7 +10,9 @@ var accessTokenBasePath = "/apps/v2/profile/security"
 
 type AccessTokenService interface {
 	List(ctx context.Context, options *ListOptions) ([]AccessToken, error)
-	Create(ctx context.Context, name, accessToken, expirationDate, status string) error
+	// Create issues a new token and returns its value. The API generates the
+	// value and returns it only once; store it securely, it cannot be read back.
+	Create(ctx context.Context, name, expirationDate, status string) (string, error)
 	Delete(ctx context.Context, accessTokenIdentifier string) error
 	Update(ctx context.Context, accessTokenIdentifier, name, expirationDate, status string) error
 }
@@ -49,27 +51,38 @@ func (s *accessTokenServiceHandler) List(ctx context.Context, options *ListOptio
 	return accessTokens.Data, nil
 }
 
-func (s *accessTokenServiceHandler) Create(ctx context.Context, name, accessToken, expirationDate, status string) error {
+func (s *accessTokenServiceHandler) Create(ctx context.Context, name, expirationDate, status string) (string, error) {
 	path := fmt.Sprintf("%s/access/token", accessTokenBasePath)
 
 	createAccessTokenReq := struct {
 		AccessTokenName string `json:"accessTokenName"`
-		AccessToken     string `json:"accessToken"`
 		ExpirationDate  string `json:"expirationDate"`
 		Status          string `json:"status"`
 	}{
 		AccessTokenName: name,
-		AccessToken:     accessToken,
 		ExpirationDate:  expirationDate,
 		Status:          status,
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, &createAccessTokenReq)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return s.client.Do(ctx, req, nil)
+	var root struct {
+		Data struct {
+			AccessToken string `json:"accessToken"`
+		} `json:"data"`
+	}
+	if err := s.client.Do(ctx, req, &root); err != nil {
+		return "", err
+	}
+
+	if root.Data.AccessToken == "" {
+		return "", fmt.Errorf("govpsie: access token created but the response did not include its value")
+	}
+
+	return root.Data.AccessToken, nil
 }
 
 func (s *accessTokenServiceHandler) Delete(ctx context.Context, accessTokenIdentifier string) error {
