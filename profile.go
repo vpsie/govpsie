@@ -75,16 +75,16 @@ type GetProfileRoot struct {
 }
 
 type Profile struct {
-	Id             int     `json:"id"`
-	Name           string  `json:"name"`
-	FirstName      string  `json:"firstname"`
-	LastName       string  `json:"lastname"`
-	Email          string  `json:"email"`
-	CurrentBalance float64 `json:"current_balance"`
-	Identifier     string  `json:"identifier"`
-	Status         string  `json:"status"`
-	MonthlyCharge  string  `json:"monthly_charge"`
-	Invitations    int     `json:"invitations"`
+	Id             int        `json:"id"`
+	Name           string     `json:"name"`
+	FirstName      string     `json:"firstname"`
+	LastName       string     `json:"lastname"`
+	Email          string     `json:"email"`
+	CurrentBalance float64    `json:"current_balance"`
+	Identifier     string     `json:"identifier"`
+	Status         string     `json:"status"`
+	MonthlyCharge  FlexString `json:"monthly_charge"`
+	Invitations    int        `json:"invitations"`
 }
 
 type UpdateProfileRequest struct {

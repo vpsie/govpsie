@@ -30,51 +30,51 @@ type ListInvoicesRoot struct {
 }
 
 type Invoice struct {
-	ID                         int       `json:"id"`
-	UserID                     int       `json:"user_id"`
-	Date                       time.Time `json:"date"`
-	SerialNumber               string    `json:"serial_number"`
-	Total                      string    `json:"total"`
-	DiscountID                 *int      `json:"discount_id"`
-	TaxID                      *int      `json:"tax_id"`
-	DiscountValue              *float32  `json:"discount_value"`
-	TaxValue                   *float32  `json:"tax_value"`
-	TotalAfterDiscountAndTaxes *float32  `json:"total_after_discount_and_taxes"`
-	IsPaid                     int       `json:"is_paid"`
-	CreatedOn                  time.Time `json:"created_on"`
-	UpdatedAt                  time.Time `json:"updated_at"`
-	Month                      int       `json:"month"`
-	Year                       int       `json:"year"`
-	Identifier                 string    `json:"identifier"`
-	OldInvoice                 int       `json:"old_invoice"`
-	IsCustom                   int       `json:"is_custom"`
-	EndPeriod                  *string   `json:"end_period"`
-	CustomUserName             *string   `json:"custom_user_name"`
-	CustomBillAddress          *string   `json:"custom_bill_address"`
-	IsHidden                   int       `json:"is_hidden"`
-	TaxPercentage              *string   `json:"tax_percentage"`
-	DiscountPercentage         *string   `json:"discount_percentage"`
-	InvoiceStatus              int       `json:"invoice_status"`
-	Notes                      *string   `json:"notes"`
-	DueDate                    *string   `json:"due_date"`
-	TransactionID              *int      `json:"transaction_id"`
-	PaidValue                  *string   `json:"paid_value"`
-	PaymentMethod              *string   `json:"payment_method"`
-	CustomFooter               *string   `json:"custom_footer"`
-	BankDetails                int       `json:"bank_details"`
-	VatPercentage              string    `json:"vat_percentage"`
-	Username                   string    `json:"username"`
-	TaxName                    *string   `json:"tax_name"`
-	TaxType                    *string   `json:"tax_type"`
-	DiscountName               *string   `json:"discount_name"`
-	DiscountType               *string   `json:"discount_type"`
-	ResellerName               *string   `json:"reseller_name"`
-	ResellerID                 *string   `json:"reseller_id"`
-	IsUserHaveReseller         *int      `json:"is_user_have_reseller"`
-	StartingDate               string    `json:"startingDate"`
-	ClosingDate                string    `json:"closingDate"`
-	StartingBalance            float64   `json:"startingBalance"`
-	ClosingBalance             float64   `json:"closingBalance"`
+	ID                         int        `json:"id"`
+	UserID                     int        `json:"user_id"`
+	Date                       time.Time  `json:"date"`
+	SerialNumber               string     `json:"serial_number"`
+	Total                      FlexString `json:"total"`
+	DiscountID                 *int       `json:"discount_id"`
+	TaxID                      *int       `json:"tax_id"`
+	DiscountValue              *float32   `json:"discount_value"`
+	TaxValue                   *float32   `json:"tax_value"`
+	TotalAfterDiscountAndTaxes *float32   `json:"total_after_discount_and_taxes"`
+	IsPaid                     int        `json:"is_paid"`
+	CreatedOn                  time.Time  `json:"created_on"`
+	UpdatedAt                  time.Time  `json:"updated_at"`
+	Month                      int        `json:"month"`
+	Year                       int        `json:"year"`
+	Identifier                 string     `json:"identifier"`
+	OldInvoice                 int        `json:"old_invoice"`
+	IsCustom                   int        `json:"is_custom"`
+	EndPeriod                  *string    `json:"end_period"`
+	CustomUserName             *string    `json:"custom_user_name"`
+	CustomBillAddress          *string    `json:"custom_bill_address"`
+	IsHidden                   int        `json:"is_hidden"`
+	TaxPercentage              *string    `json:"tax_percentage"`
+	DiscountPercentage         *string    `json:"discount_percentage"`
+	InvoiceStatus              int        `json:"invoice_status"`
+	Notes                      *string    `json:"notes"`
+	DueDate                    *string    `json:"due_date"`
+	TransactionID              *int       `json:"transaction_id"`
+	PaidValue                  *string    `json:"paid_value"`
+	PaymentMethod              *string    `json:"payment_method"`
+	CustomFooter               *string    `json:"custom_footer"`
+	BankDetails                int        `json:"bank_details"`
+	VatPercentage              string     `json:"vat_percentage"`
+	Username                   string     `json:"username"`
+	TaxName                    *string    `json:"tax_name"`
+	TaxType                    *string    `json:"tax_type"`
+	DiscountName               *string    `json:"discount_name"`
+	DiscountType               *string    `json:"discount_type"`
+	ResellerName               *string    `json:"reseller_name"`
+	ResellerID                 *string    `json:"reseller_id"`
+	IsUserHaveReseller         *int       `json:"is_user_have_reseller"`
+	StartingDate               string     `json:"startingDate"`
+	ClosingDate                string     `json:"closingDate"`
+	StartingBalance            float64    `json:"startingBalance"`
+	ClosingBalance             float64    `json:"closingBalance"`
 }
 
 type PurchaseLog struct {
@@ -108,24 +108,24 @@ type ListPurchaseLogRoot struct {
 }
 
 type EstimatedUsages struct {
-	ID             int       `json:"id"`
-	ProductID      int       `json:"product_id"`
-	EntityType     string    `json:"entity_type"`
-	EntityID       int       `json:"entity_id"`
-	UserID         int       `json:"user_id"`
-	StartDate      time.Time `json:"start_date"`
-	EndDate        *string   `json:"end_date"`
-	TypeOfTrigger  string    `json:"type_of_trigger"`
-	CreatedOn      time.Time `json:"created_on"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	Identifier     string    `json:"identifier"`
-	Quantity       int       `json:"quantity"`
-	Unit           string    `json:"unit"`
-	Price          string    `json:"price"`
-	CostValue      string    `json:"cost_value"`
-	CostValueMonth string    `json:"cost_value_month"`
-	EntityName     string    `json:"entity_name"`
-	Description    string    `json:"description"`
+	ID             int        `json:"id"`
+	ProductID      int        `json:"product_id"`
+	EntityType     string     `json:"entity_type"`
+	EntityID       int        `json:"entity_id"`
+	UserID         int        `json:"user_id"`
+	StartDate      time.Time  `json:"start_date"`
+	EndDate        *string    `json:"end_date"`
+	TypeOfTrigger  string     `json:"type_of_trigger"`
+	CreatedOn      time.Time  `json:"created_on"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	Identifier     string     `json:"identifier"`
+	Quantity       int        `json:"quantity"`
+	Unit           string     `json:"unit"`
+	Price          FlexString `json:"price"`
+	CostValue      FlexString `json:"cost_value"`
+	CostValueMonth FlexString `json:"cost_value_month"`
+	EntityName     string     `json:"entity_name"`
+	Description    string     `json:"description"`
 }
 type ListEstimatedUsagesRoot struct {
 	Error       bool              `json:"error"`
@@ -134,8 +134,8 @@ type ListEstimatedUsagesRoot struct {
 	BalanceData struct {
 		CurrentBalance      float64     `json:"current_balance"`
 		BalanceCharged      int         `json:"balance_charged"`
-		MonthlyCharge       string      `json:"monthly_charge"`
-		ActualMonthlyCharge string      `json:"actual_monthly_charge"`
+		MonthlyCharge       FlexString  `json:"monthly_charge"`
+		ActualMonthlyCharge FlexString  `json:"actual_monthly_charge"`
 		AddedWithCc         int         `json:"added_with_cc"`
 		AddedWithCcOrPp     int         `json:"added_with_cc_or_pp"`
 		BillCity            interface{} `json:"bill_city"`
