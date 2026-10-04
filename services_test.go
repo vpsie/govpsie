@@ -371,3 +371,50 @@ func TestManagedDB_AddNodeSendsRequiredFields(t *testing.T) {
 		t.Errorf("expected processId in body: %+v", got)
 	}
 }
+
+func TestServer_ResumeSendsTargetWhenSet(t *testing.T) {
+	var got map[string]interface{}
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/apps/v2/vm/resume" {
+			t.Errorf("got %s %s", r.Method, r.URL.Path)
+		}
+		got = decodeBody(t, r)
+		_, _ = w.Write([]byte(`{"error":false,"data":true}`))
+	})
+
+	err := c.Server.Resume(context.Background(), &ResumeReq{
+		VmIdentifier:       "vm-1",
+		OsIdentifier:       "os-1",
+		DcIdentifier:       "dc-1",
+		ResourceIdentifier: "plan-1",
+		Password:           "pw",
+	})
+	if err != nil {
+		t.Fatalf("Resume: %v", err)
+	}
+	if got["dcIdentifier"] != "dc-1" || got["resourceIdentifier"] != "plan-1" {
+		t.Errorf("unexpected body: %+v", got)
+	}
+	if got["vmIdentifier"] != "vm-1" || got["osIdentifier"] != "os-1" || got["password"] != "pw" {
+		t.Errorf("unexpected body: %+v", got)
+	}
+}
+
+func TestServer_ResumeOmitsUnsetTarget(t *testing.T) {
+	var got map[string]interface{}
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		got = decodeBody(t, r)
+		_, _ = w.Write([]byte(`{"error":false,"data":true}`))
+	})
+
+	if err := c.Server.Resume(context.Background(), &ResumeReq{VmIdentifier: "vm-1", OsIdentifier: "os-1", Password: "pw"}); err != nil {
+		t.Fatalf("Resume: %v", err)
+	}
+	// Left out, the API uses the server's own datacenter and plan.
+	if _, ok := got["dcIdentifier"]; ok {
+		t.Errorf("dcIdentifier sent although unset: %+v", got)
+	}
+	if _, ok := got["resourceIdentifier"]; ok {
+		t.Errorf("resourceIdentifier sent although unset: %+v", got)
+	}
+}

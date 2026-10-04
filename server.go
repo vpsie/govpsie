@@ -210,14 +210,25 @@ type VpcRequest struct {
 	DcIdentifier string `json:"dcIdentifier"`
 }
 
+// ResumeReq is the body of POST /vm/resume, which reinstalls a server from
+// an image. Password is the account login password and is verified before
+// the request is accepted.
+//
+// DcIdentifier and ResourceIdentifier are optional. A server is always
+// reinstalled in its own datacenter on its own plan; when they are left
+// empty the API uses the server's datacenter and the server's plan in that
+// datacenter. When they are set they must match the server (the API answers
+// 400 otherwise).
 type ResumeReq struct {
-	VmIdentifier     string `json:"vmIdentifier"`
-	OsIdentifier     string `json:"osIdentifier"`
-	ScriptIdentifier string `json:"scriptIdentifier"`
-	SshKeyIdentifier string `json:"sshKeyIdentifier"`
-	HostName         string `json:"hostname"`
-	Password         string `json:"password"`
-	IsOnPremise      bool   `json:"isOnPremise"`
+	VmIdentifier       string `json:"vmIdentifier"`
+	OsIdentifier       string `json:"osIdentifier"`
+	DcIdentifier       string `json:"dcIdentifier,omitempty"`
+	ResourceIdentifier string `json:"resourceIdentifier,omitempty"`
+	ScriptIdentifier   string `json:"scriptIdentifier"`
+	SshKeyIdentifier   string `json:"sshKeyIdentifier"`
+	HostName           string `json:"hostname"`
+	Password           string `json:"password"`
+	IsOnPremise        bool   `json:"isOnPremise"`
 }
 
 type ListAllNodesOfUserRoot struct {
