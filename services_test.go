@@ -371,3 +371,41 @@ func TestManagedDB_AddNodeSendsRequiredFields(t *testing.T) {
 		t.Errorf("expected processId in body: %+v", got)
 	}
 }
+
+func TestBackups_EnableAutoBackupOmitsUnsetVmID(t *testing.T) {
+	var got map[string]interface{}
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/apps/v2/backups/enable/auto" {
+			t.Errorf("got %s %s", r.Method, r.URL.Path)
+		}
+		got = decodeBody(t, r)
+		_, _ = w.Write([]byte(`{"error":false,"data":true}`))
+	})
+
+	req := &EnableAutoBackupReq{VmIdentifier: "vm-1", Period: "daily", AutoBackup: 1}
+	if err := c.Backup.EnableAutoBackup(context.Background(), req); err != nil {
+		t.Fatalf("EnableAutoBackup: %v", err)
+	}
+	if _, sent := got["vmId"]; sent {
+		t.Errorf("vmId must be omitted when unset, got body %+v", got)
+	}
+	if got["vmIdentifier"] != "vm-1" || got["period"] != "daily" {
+		t.Errorf("unexpected body: %+v", got)
+	}
+}
+
+func TestBackups_EnableAutoBackupSendsVmIDWhenSet(t *testing.T) {
+	var got map[string]interface{}
+	c := setup(t, func(w http.ResponseWriter, r *http.Request) {
+		got = decodeBody(t, r)
+		_, _ = w.Write([]byte(`{"error":false,"data":true}`))
+	})
+
+	req := &EnableAutoBackupReq{VmIdentifier: "vm-1", VmID: 42, Period: "weekly", AutoBackup: 1}
+	if err := c.Backup.EnableAutoBackup(context.Background(), req); err != nil {
+		t.Fatalf("EnableAutoBackup: %v", err)
+	}
+	if got["vmId"] != float64(42) {
+		t.Errorf("vmId = %v, want 42", got["vmId"])
+	}
+}
