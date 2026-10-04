@@ -27,9 +27,12 @@ type BackupsService interface {
 	ListBackupPolicies(ctx context.Context, options *ListOptions) ([]BackupPolicyListDetail, error)
 }
 
+// EnableAutoBackupReq is the body of POST /backups/enable/auto. The API resolves the server
+// from VmIdentifier; VmID is optional and, when set, must be that server's numeric id, so a
+// zero VmID is left out of the request rather than sent as "vmId": 0.
 type EnableAutoBackupReq struct {
 	VmIdentifier  string   `json:"vmIdentifier"`
-	VmID          int      `json:"vmId"`
+	VmID          int      `json:"vmId,omitempty"`
 	Period        string   `json:"period"`
 	AutoBackup    int      `json:"autoBackup"`
 	WeeklyBackup  int      `json:"weeklyBackup"`
