@@ -162,6 +162,10 @@ type Rule struct {
 
 // LBDomain is a virtual host under a rule (lbDomainSchema). It is the
 // request-side type; responses are decoded into LBDomainsDetail.
+//
+// PassThrough must stay false: the API refuses true with 400
+// (lbPassThroughNotSupported), TLS passthrough is not supported. It is always
+// sent (no omitempty) so a request never relies on a default.
 type LBDomain struct {
 	DomainID        string    `json:"domainId,omitempty"`
 	DomainName      string    `json:"domainName,omitempty"`
