@@ -100,6 +100,7 @@ type LBDomainsDetail struct {
 	FastInterval    int                `json:"fastInterval"`
 	Rise            int                `json:"rise"`
 	Fall            int                `json:"fall"`
+	CorsHeaders     *FlexBool          `json:"corsHeaders,omitempty"`
 	Backends        []LBBackendsDetail `json:"backends"`
 }
 
@@ -163,6 +164,10 @@ type Rule struct {
 // LBDomain is a virtual host under a rule (lbDomainSchema). It is the
 // request-side type; responses are decoded into LBDomainsDetail.
 //
+// CorsHeaders asks for the permissive CORS response headers on the domain
+// (each added only when the application did not send its own). Left nil, the
+// field is not sent and the API keeps them on.
+//
 // PassThrough must stay false: the API refuses true with 400
 // (lbPassThroughNotSupported), TLS passthrough is not supported. It is always
 // sent (no omitempty) so a request never relies on a default.
@@ -182,6 +187,7 @@ type LBDomain struct {
 	HealthCheckPath string    `json:"healthCheckPath,omitempty"`
 	BackendScheme   string    `json:"backendScheme,omitempty"`
 	PassThrough     bool      `json:"passThrough"`
+	CorsHeaders     *bool     `json:"corsHeaders,omitempty"`
 	Backends        []Backend `json:"backends"`
 }
 type Backend struct {
