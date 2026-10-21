@@ -1,8 +1,8 @@
 // Package govpsie is the Go client library for the VPSie cloud API.
 //
-// It provides typed access to VPSie resources — servers, storage, networking,
-// DNS, load balancers, Kubernetes, container registries, managed databases and
-// more — through a single Client.
+// It provides typed access to VPSie resources — servers, bare-metal servers,
+// storage, networking, DNS, load balancers, Kubernetes, container registries,
+// managed databases and more — through a single Client.
 //
 // # Getting started
 //
@@ -21,7 +21,8 @@
 // client.Server, client.Storage, client.K8s, client.ManagedDB). Every
 // request flows through Client.NewRequest and Client.Do, which unwraps the
 // standard response envelope {error, data, total} and converts a non-2xx status
-// into an error carrying the API message.
+// into an *APIError carrying the HTTP status, the API message and, when sent,
+// the API's error code (see IsNotFound and ErrorCode).
 //
 // # Authentication
 //

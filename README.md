@@ -21,7 +21,7 @@ the SDK that powers the
 ```mermaid
 flowchart LR
     App["Your Go application"] --> Client["govpsie.Client"]
-    Client --> Compute["Server · Image · Snapshot<br/>Backup · ServerGroup"]
+    Client --> Compute["Server · BareMetal · Image<br/>Snapshot · Backup · ServerGroup"]
     Client --> Network["VPC · Firewall · Fip · IP<br/>Gateway · LB · Domain"]
     Client --> Platform["Kubernetes · Registry<br/>ManagedDB · Storage · Bucket"]
     Client --> Account["Account · Project · Billing<br/>Monitoring · Tags · Certificate"]
@@ -104,6 +104,7 @@ token — read it from the environment or a secret store.
 | Account | `client.Account` | Account details |
 | Project | `client.Project` | Projects and membership |
 | Server | `client.Server` | VM lifecycle, power, resize |
+| Bare Metal | `client.BareMetal` | Dedicated servers: plans, OS list, order, power, hostname, project, password reset, private networks, release |
 | Image | `client.Image` | Custom images |
 | Snapshot | `client.Snapshot` | Server snapshots and policies |
 | Backup | `client.Backup` | Backups and backup policies |
@@ -172,6 +173,47 @@ if err := client.ManagedDB.AddNode(ctx, "cluster-identifier"); err != nil {
 }
 ```
 
+Order a bare-metal server and wait until its OS is installed:
+
+```go
+plans, err := client.BareMetal.ListPlans(ctx, "datacenter-identifier", &govpsie.BareMetalPlanFilter{MinRAMGB: 64})
+if err != nil {
+	log.Fatal(err)
+}
+osGroups, err := client.BareMetal.ListOS(ctx, "datacenter-identifier", plans[0].Identifier)
+if err != nil {
+	log.Fatal(err)
+}
+
+// The idempotency key makes the order safe to send again after a timeout:
+// the API answers a repeat with the first order's result for 24 hours.
+order, err := client.BareMetal.Deploy(ctx, &govpsie.BareMetalDeployRequest{
+	DCIdentifier:      "datacenter-identifier",
+	PlanIdentifier:    plans[0].Identifier,
+	OSIdentifier:      osGroups[0].Versions[0].Identifier,
+	Hostname:          "web-1.example.com",
+	Password:          os.Getenv("BM_ROOT_PASSWORD"),
+	SSHKeyIdentifiers: []string{"ssh-key-identifier"},
+	ContractTerm:      "monthly",
+}, "order-web-1")
+if err != nil {
+	log.Fatal(err)
+}
+
+// A stocked server installs at once; a build-to-order one (Status
+// "pending_build") appears in Get only once it is delivered.
+for {
+	bm, err := client.BareMetal.Get(ctx, order.Identifier)
+	if err == nil && bm.OSPhase == govpsie.BareMetalOSPhaseRunning {
+		break
+	}
+	if err != nil && !govpsie.IsNotFound(err) {
+		log.Fatal(err)
+	}
+	time.Sleep(30 * time.Second)
+}
+```
+
 ## Pagination
 
 List methods that support paging accept `*govpsie.ListOptions`:
@@ -192,6 +234,23 @@ storages, err := client.Storage.List(ctx, opts)
 ```go
 if _, err := client.Server.GetServerByIdentifier(ctx, "does-not-exist"); err != nil {
 	// err.Error() contains the API-provided message.
+}
+```
+
+The error is a `*govpsie.APIError` carrying the HTTP status and, when the API
+sends one, its machine-readable `code`. `govpsie.IsNotFound(err)` tests for a
+404 and `govpsie.ErrorCode(err)` returns the code:
+
+```go
+_, err := client.BareMetal.AttachPrivateNetwork(ctx, "server-identifier", 1234)
+switch {
+case govpsie.ErrorCode(err) == "private_network_busy":
+	// Another attach or detach is still running on this server; retry later.
+case err != nil:
+	var apiErr *govpsie.APIError
+	if errors.As(err, &apiErr) {
+		log.Printf("status %d: %s", apiErr.StatusCode, apiErr.Message)
+	}
 }
 ```
 

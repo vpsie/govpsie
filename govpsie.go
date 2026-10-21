@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -68,6 +66,7 @@ type Client struct {
 	ServerGroup   ServerGroupService
 	Registry      RegistryService
 	ManagedDB     ManagedDBService
+	BareMetal     BareMetalService
 }
 
 type ErrorRsp struct {
@@ -135,6 +134,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.ServerGroup = &serverGroupServiceHandler{client: c}
 	c.Registry = &registryServiceHandler{client: c}
 	c.ManagedDB = &managedDBServiceHandler{client: c}
+	c.BareMetal = &bareMetalServiceHandler{client: c}
 
 	c.headers = make(map[string]string)
 	return c
@@ -303,14 +303,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (erro
 	if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
 		retryable := retryableStatus(res.StatusCode)
 
-		var errRsp ErrorRsp
-		if jsonErr := json.Unmarshal(body, &errRsp); jsonErr != nil || errRsp.Message == "" {
-			// The body was not the expected JSON envelope (e.g. an HTML error
-			// page from a proxy) or carried no message; fall back to the status.
-			return fmt.Errorf("vpsie: unexpected response: %d %s", res.StatusCode, http.StatusText(res.StatusCode)), retryable
-		}
-
-		return errors.New(errRsp.Message), retryable
+		return newAPIError(res.StatusCode, body), retryable
 	}
 
 	if v != nil {
