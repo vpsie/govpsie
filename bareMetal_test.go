@@ -2,6 +2,7 @@ package govpsie
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
@@ -18,7 +19,7 @@ func TestBareMetal_ListPlans(t *testing.T) {
 		}
 		_, _ = w.Write([]byte(`{"error":false,"data":[{"identifier":"plan-1","name":"E-2388G","cpuCount":8,"ramGb":64,
 			"price":"149.00","setupFee":0,"delivery":"instant","contractTerms":[{"term":"monthly","discountPct":10}],
-			"linkSpeedOptions":[1000,10000],"availableServers":2}]}`))
+			"linkSpeedOptions":[1000,10000],"availableServers":2,"isActive":1}]}`))
 	})
 
 	gpu := false
@@ -30,7 +31,7 @@ func TestBareMetal_ListPlans(t *testing.T) {
 		t.Fatalf("plans = %d, want 1", len(plans))
 	}
 	p := plans[0]
-	if p.Identifier != "plan-1" || p.RAMGB != 64 || p.Price.String() != "149.00" || p.SetupFee.String() != "0" {
+	if p.Identifier != "plan-1" || p.RAMGB != 64 || !p.IsActive || p.Price.String() != "149.00" || p.SetupFee.String() != "0" {
 		t.Fatalf("unexpected plan %+v", p)
 	}
 	if len(p.ContractTerms) != 1 || p.ContractTerms[0].DiscountPct != 10 || len(p.LinkSpeedOptions) != 2 {
@@ -50,20 +51,57 @@ func TestBareMetal_ListOS(t *testing.T) {
 		if r.URL.Path != "/apps/v2/bare-metal/dc/dc-1/os" || r.URL.Query().Get("planId") != "plan-1" {
 			t.Fatalf("unexpected request %s?%s", r.URL.Path, r.URL.RawQuery)
 		}
-		_, _ = w.Write([]byte(`{"error":false,"data":[{"name":"Ubuntu","is_default":true,"available_versions":[
-			{"identifier":"bmos_abc","fullname":"Ubuntu 24.04","osFamily":"linux","remoteAccessConfigurable":true,"is_default":true}]}]}`))
+		_, _ = w.Write([]byte(`{"error":false,"data":[{"name":"Ubuntu","is_default":1,"available_versions":[
+			{"identifier":"bmos_abc","fullname":"Ubuntu 24.04","osFamily":"linux","remoteAccessConfigurable":true,"is_default":1},
+			{"identifier":"bmos_def","fullname":"Ubuntu 22.04","osFamily":"linux","remoteAccessConfigurable":true,"is_default":0}]}]}`))
 	})
 
 	groups, err := c.BareMetal.ListOS(context.Background(), "dc-1", "plan-1")
 	if err != nil {
 		t.Fatalf("ListOS: %v", err)
 	}
-	if len(groups) != 1 || len(groups[0].Versions) != 1 {
+	if len(groups) != 1 || len(groups[0].Versions) != 2 || !groups[0].IsDefault {
 		t.Fatalf("unexpected groups %+v", groups)
 	}
 	v := groups[0].Versions[0]
 	if v.Identifier != "bmos_abc" || v.FullName != "Ubuntu 24.04" || v.OSFamily != "linux" || !v.IsDefault {
 		t.Fatalf("unexpected version %+v", v)
+	}
+	if groups[0].Versions[1].IsDefault {
+		t.Fatalf("is_default 0 decoded as true: %+v", groups[0].Versions[1])
+	}
+}
+
+// TestBareMetal_FlagsAcceptNumbersAndBooleans pins the flag encodings: the
+// API sends isActive and is_default as TINYINT 1 / 0, and a boolean must
+// still decode should an endpoint switch to it.
+func TestBareMetal_FlagsAcceptNumbersAndBooleans(t *testing.T) {
+	for _, tt := range []struct {
+		in   string
+		want bool
+	}{
+		{in: `1`, want: true},
+		{in: `0`, want: false},
+		{in: `true`, want: true},
+		{in: `false`, want: false},
+		{in: `"1"`, want: true},
+	} {
+		var plan BareMetalPlan
+		if err := json.Unmarshal([]byte(`{"isActive":`+tt.in+`}`), &plan); err != nil {
+			t.Fatalf("plan isActive %s: %v", tt.in, err)
+		}
+		var group BareMetalOSGroup
+		if err := json.Unmarshal([]byte(`{"is_default":`+tt.in+`,"available_versions":[{"is_default":`+tt.in+`}]}`), &group); err != nil {
+			t.Fatalf("os is_default %s: %v", tt.in, err)
+		}
+		if bool(plan.IsActive) != tt.want || bool(group.IsDefault) != tt.want || bool(group.Versions[0].IsDefault) != tt.want {
+			t.Fatalf("%s decoded as plan=%v group=%v version=%v, want %v", tt.in, plan.IsActive, group.IsDefault, group.Versions[0].IsDefault, tt.want)
+		}
+	}
+
+	var plan BareMetalPlan
+	if err := json.Unmarshal([]byte(`{"isActive":2}`), &plan); err == nil {
+		t.Fatal("isActive 2 was accepted")
 	}
 }
 

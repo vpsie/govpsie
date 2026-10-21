@@ -137,25 +137,25 @@ type BareMetalPlan struct {
 	ContractTerms    []BareMetalContractTerm `json:"contractTerms"`
 	LinkSpeedOptions []int                   `json:"linkSpeedOptions"`
 	AvailableServers int                     `json:"availableServers"`
-	IsActive         bool                    `json:"isActive"`
+	IsActive         FlexBool                `json:"isActive"`
 }
 
 // BareMetalOSVersion is one installable operating system.
 type BareMetalOSVersion struct {
-	Identifier               string `json:"identifier"`
-	FullName                 string `json:"fullname"`
-	Category                 string `json:"category"`
-	Description              string `json:"description"`
-	GPU                      bool   `json:"gpu"`
-	OSFamily                 string `json:"osFamily"`
-	RemoteAccessConfigurable bool   `json:"remoteAccessConfigurable"`
-	IsDefault                bool   `json:"is_default"`
+	Identifier               string   `json:"identifier"`
+	FullName                 string   `json:"fullname"`
+	Category                 string   `json:"category"`
+	Description              string   `json:"description"`
+	GPU                      bool     `json:"gpu"`
+	OSFamily                 string   `json:"osFamily"`
+	RemoteAccessConfigurable bool     `json:"remoteAccessConfigurable"`
+	IsDefault                FlexBool `json:"is_default"`
 }
 
 // BareMetalOSGroup is a distribution and its installable versions.
 type BareMetalOSGroup struct {
 	Name      string               `json:"name"`
-	IsDefault bool                 `json:"is_default"`
+	IsDefault FlexBool             `json:"is_default"`
 	Versions  []BareMetalOSVersion `json:"available_versions"`
 }
 
